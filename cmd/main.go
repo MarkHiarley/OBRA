@@ -45,8 +45,10 @@ func main() {
 	//gest
 	server.GET("/usuarios", usuarioController.GetUsuarios)
 	server.GET("/pessoas", pessoaController.GetPessoas)
-	server.GET("/obras")
-	server.GET("/diarios")
+	server.GET("/obras", obraControle.GetObras)
+	server.GET("/diarios", diarioController.GetDiarios)
+
+	server.GET("/usuario/:id", usuarioController.GetUsuarioById)
 
 	server.Run(":3000")
 }

@@ -16,20 +16,20 @@ func NewPessoaService(connection *sql.DB) PessoaServices {
 	}
 }
 
-func (pr *PessoaServices) CreatePessoa(pessoa models.Pessoa) (int, error) {
-	var id int
+func (pr *PessoaServices) CreatePessoa(pessoa models.Pessoa) (int64, error) {
+	var id int64
 
 	query := `INSERT INTO pessoa (nome, tipo, documento, email, telefone, cargo) 
               VALUES ($1, $2, $3, $4, $5, $6) 
               RETURNING id`
 
 	err := pr.connection.QueryRow(query,
-		pessoa.Nome,
-		pessoa.Tipo,
-		pessoa.Documento,
-		pessoa.Email,
-		pessoa.Telefone,
-		pessoa.Cargo).Scan(&id)
+		pessoa.Nome.String,
+		pessoa.TipoDocumento.String,
+		pessoa.Documento.String,
+		pessoa.Email.String,
+		pessoa.Telefone.String,
+		pessoa.Cargo.String).Scan(&id)
 
 	if err != nil {
 		fmt.Printf("Erro ao criar pessoa: %v\n", err)
@@ -54,7 +54,7 @@ func (pr *PessoaServices) GetPessoas() ([]models.Pessoa, error) {
 		err = rows.Scan(
 			&pessoaObj.ID,
 			&pessoaObj.Nome,
-			&pessoaObj.Tipo,
+			&pessoaObj.TipoDocumento,
 			&pessoaObj.Documento,
 			&pessoaObj.Email,
 			&pessoaObj.Telefone,

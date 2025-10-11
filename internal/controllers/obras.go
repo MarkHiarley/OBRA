@@ -43,3 +43,17 @@ func (p *ObraController) CreateObra(ctx *gin.Context) {
 		"data":    createdObra,
 	})
 }
+
+func (p *ObraController) GetObras(ctx *gin.Context) {
+	obras, err := p.ObraUseCase.GetObras()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"data": obras,
+	})
+}

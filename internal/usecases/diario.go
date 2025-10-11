@@ -17,12 +17,16 @@ func NewDiarioUsecase(services services.DiarioServices) DiarioUseCase {
 
 func (pu *DiarioUseCase) CreateDiario(newDiario models.DiarioObra) (models.DiarioObra, error) {
 
-	obraId, err := pu.services.CreateDiario(newDiario)
+	diarioId, err := pu.services.CreateDiario(newDiario)
 
 	if err != nil {
 		return models.DiarioObra{}, err
 	}
-	newDiario.ID = obraId
+	newDiario.ID = diarioId
 
 	return newDiario, nil
+}
+
+func (pu *DiarioUseCase) GetDiarios() ([]models.DiarioObra, error) {
+	return pu.services.GetDiarios()
 }

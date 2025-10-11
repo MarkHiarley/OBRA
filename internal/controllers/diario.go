@@ -44,3 +44,17 @@ func (p *DiarioController) CreateDiario(ctx *gin.Context) {
 		"data":    createdDiario,
 	})
 }
+
+func (p *DiarioController) GetDiarios(ctx *gin.Context) {
+	diarios, err := p.DiarioUseCase.GetDiarios()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"data": diarios,
+	})
+}

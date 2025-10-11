@@ -22,7 +22,8 @@ func (pu *PessoaUseCase) CreatePessoa(newPessoa models.Pessoa) (models.Pessoa, e
 	if err != nil {
 		return models.Pessoa{}, err
 	}
-	newPessoa.ID = userId
+	newPessoa.ID.Int64 = userId
+	newPessoa.ID.Valid = true
 
 	return newPessoa, nil
 }

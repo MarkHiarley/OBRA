@@ -4,6 +4,7 @@ import (
 	"codxis-obras/internal/models"
 	"codxis-obras/internal/usecases"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -55,4 +56,42 @@ func (p *usuarioController) GetUsuarios(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"data": users,
 	})
+}
+func (p *usuarioController) GetUsuarioById(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	if id == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "id não pode ser nulo",
+		})
+		return
+	}
+
+	idNumero, err := strconv.Atoi(id)
+	if err != nil {
+		message := models.Response{Messagem: "tem que ser número"}
+
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error":   err.Error(),
+			"message": message.Messagem,
+		})
+		return
+	}
+
+	usuario, err := p.usuarioUseCase.GetUsuariosById(idNumero)
+	if err != nil {
+		if err.Error() == "usuário não encontrado" {
+			ctx.JSON(http.StatusNotFound, gin.H{
+				"message": err.Error(),
+			})
+			return
+		}
+
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, usuario)
 }

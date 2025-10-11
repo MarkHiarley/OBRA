@@ -22,7 +22,12 @@ func (pu *ObraUseCase) CreateObra(newObra models.Obra) (models.Obra, error) {
 	if err != nil {
 		return models.Obra{}, err
 	}
-	newObra.ID = obraId
+	newObra.ID.Int64 = obraId
+	newObra.ID.Valid = true
 
 	return newObra, nil
+}
+
+func (pu *ObraUseCase) GetObras() ([]models.Obra, error) {
+	return pu.services.GetObras()
 }

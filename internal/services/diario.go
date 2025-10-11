@@ -41,3 +41,42 @@ func (pr *DiarioServices) CreateDiario(diario models.DiarioObra) (int, error) {
 
 	return id, nil
 }
+
+func (pr *DiarioServices) GetDiarios() ([]models.DiarioObra, error) {
+	query := "select id, obra_id, data, periodo, atividades_realizadas, ocorrencias, observacoes, responsavel_id, aprovado_por_id, status_aprovacao, created_at from diario_obra"
+	rows, err := pr.connection.Query(query)
+	if err != nil {
+		fmt.Println(err)
+		return []models.DiarioObra{}, err
+	}
+
+	var diarioList []models.DiarioObra
+	var diariosObj models.DiarioObra
+
+	for rows.Next() {
+		err = rows.Scan(
+			&diariosObj.ID,
+			&diariosObj.ObraID,
+			&diariosObj.Data,
+			&diariosObj.Periodo,
+			&diariosObj.AtividadesRealizadas,
+			&diariosObj.Ocorrencias,
+			&diariosObj.Observacoes,
+			&diariosObj.ResponsavelID,
+			&diariosObj.AprovadoPorID,
+			&diariosObj.StatusAprovacao,
+			&diariosObj.CreatedAt,
+		)
+
+		if err != nil {
+			fmt.Println(err)
+			return []models.DiarioObra{}, err
+		}
+
+		diarioList = append(diarioList, diariosObj)
+
+	}
+
+	rows.Close()
+	return diarioList, nil
+}

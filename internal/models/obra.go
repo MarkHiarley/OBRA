@@ -1,28 +1,28 @@
 package models
 
 import (
-	"database/sql"
-	"time"
+	"gopkg.in/guregu/null.v4"
 )
 
 type Obra struct {
-	ID              int             `json:"id"`
-	Nome            string          `json:"nome" binding:"required"`
-	ContratoNumero  string          `json:"contrato_numero" binding:"required"`
-	ContratanteID   sql.NullInt64   `json:"contratante_id" binding:"required"`
-	ResponsavelID   sql.NullInt64   `json:"responsavel_id,omitempty"`
-	DataInicio      string          `json:"data_inicio" binding:"required"` // "2024-01-23"
-	PrazoDias       int             `json:"prazo_dias" binding:"required,gt=0"`
-	DataFimPrevista sql.NullString  `json:"data_fim_prevista,omitempty"`
-	Orcamento       sql.NullFloat64 `json:"orcamento,omitempty"`
-	Status          sql.NullString  `json:"status"`
-	EnderecoRua     sql.NullString  `json:"endereco_rua,omitempty"`
-	EnderecoNumero  sql.NullString  `json:"endereco_numero,omitempty"`
-	EnderecoBairro  sql.NullString  `json:"endereco_bairro,omitempty"`
-	EnderecoCidade  sql.NullString  `json:"endereco_cidade,omitempty"`
-	EnderecoEstado  sql.NullString  `json:"endereco_estado,omitempty"`
-	EnderecoCep     sql.NullString  `json:"endereco_cep,omitempty"`
-	Observacoes     sql.NullString  `json:"observacoes,omitempty"`
-	Ativo           sql.NullBool    `json:"ativo"`
-	CreatedAt       time.Time       `json:"createdAt"`
+	ID              null.Int    `json:"id"`
+	Nome            null.String `json:"nome"`
+	ContratoNumero  null.String `json:"contrato_numero"`
+	ContratanteID   null.Int    `json:"contratante_id"`
+	ResponsavelID   null.Int    `json:"responsavel_id,omitempty"`
+	DataInicio      null.String `json:"data_inicio"`
+	PrazoDias       null.Int    `json:"prazo_dias"`
+	DataFimPrevista null.String `json:"data_fim_prevista,omitempty"`
+	Orcamento       null.Float  `json:"orcamento,omitempty"`
+	Status          null.String `json:"status"`
+	EnderecoRua     null.String `json:"endereco_rua,omitempty"`
+	EnderecoNumero  null.String `json:"endereco_numero,omitempty"`
+	EnderecoBairro  null.String `json:"endereco_bairro,omitempty"`
+	EnderecoCidade  null.String `json:"endereco_cidade,omitempty"`
+	EnderecoEstado  null.String `json:"endereco_estado,omitempty"`
+	EnderecoCep     null.String `json:"endereco_cep,omitempty"`
+	Observacoes     null.String `json:"observacoes,omitempty"`
+	Ativo           null.Bool   `json:"ativo"`
+	CreatedAt       null.Time   `json:"createdAt"`
+	UpdatedAt       null.Time   `json:"updatedAt"`
 }

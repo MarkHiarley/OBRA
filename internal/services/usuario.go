@@ -34,15 +34,15 @@ func (pr *UsuarioServices) CreateUsuario(user models.Usuario, senhaHash []byte) 
 		RETURNING id
 	`
 
-	perfilArray := fmt.Sprintf("{%s}", user.Perfil_acesso)
+	perfilArray := fmt.Sprintf("{%s}", user.PerfilAcesso.String)
 	err := pr.connection.QueryRow(
 		query,
-		user.Nome,
-		user.Email,
+		user.Nome.NullString,
+		user.Email.NullString,
 		string(senhaHash),
-		user.Tipo_documento,
-		user.Documento,
-		user.Telefone,
+		user.TipoDocumento.NullString,
+		user.Documento.NullString,
+		user.Telefone.NullString,
 		perfilArray,
 		true,
 	).Scan(&id)
@@ -71,10 +71,10 @@ func (pr *UsuarioServices) GetUsuarios() ([]models.Usuario, error) {
 			&usuarioObj.ID,
 			&usuarioObj.Nome,
 			&usuarioObj.Email,
-			&usuarioObj.Tipo_documento,
+			&usuarioObj.TipoDocumento,
 			&usuarioObj.Documento,
 			&usuarioObj.Telefone,
-			&usuarioObj.Perfil_acesso,
+			&usuarioObj.PerfilAcesso,
 			&usuarioObj.Ativo,
 			&usuarioObj.CreatedAt,
 			&usuarioObj.UpdatedAt,
@@ -90,4 +90,39 @@ func (pr *UsuarioServices) GetUsuarios() ([]models.Usuario, error) {
 
 	rows.Close()
 	return usuarioList, nil
+}
+
+func (pr UsuarioServices) GetUsuarioById(id int) (models.Usuario, error) {
+
+	//id, nome, email, tipo_documento, documento, telefone, perfil_acesso, ativo, created_at, updated_at
+	query := "select id, nome, email, tipo_documento, documento, telefone, perfil_acesso, ativo, created_at, updated_at from usuario where id = $1"
+
+	row := pr.connection.QueryRow(query, id)
+
+	var usuario models.Usuario
+
+	err := row.Scan(
+		&usuario.ID,
+		&usuario.Nome,
+		&usuario.Email,
+		&usuario.TipoDocumento,
+		&usuario.Documento,
+		&usuario.Telefone,
+		&usuario.PerfilAcesso,
+		&usuario.Ativo,
+		&usuario.CreatedAt,
+		&usuario.UpdatedAt,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+
+			return models.Usuario{}, fmt.Errorf("usuário não encontrado")
+		}
+
+		return models.Usuario{}, err
+	}
+
+	return usuario, nil
+
 }
