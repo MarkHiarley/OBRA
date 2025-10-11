@@ -1,0 +1,23 @@
+
+  services:
+    db_obras :
+      container_name: db_obras
+      image: postgres:12
+      environment:
+        POSTGRES_PASSWORD: 7894
+        POSTGRES_USER: obras
+        POSTGRES_DB: obrasdb
+      ports:
+        - "5432:5432"
+      volumes:
+        - pgdata:/var/lib/postgres/data
+
+
+    api_obras :
+      container_name: api_obras
+      build: .
+      ports:
+        - "8080:8080"
+    
+  volumes:
+      pgdata: {}
