@@ -16,7 +16,7 @@ func NewUsuarioService(connection *sql.DB) UsuarioServices {
 	}
 }
 
-func (pr *UsuarioServices) CreateUsuario(user models.Usuario, senhaHash []byte) (int, error) {
+func (pr *UsuarioServices) CreateUsuario(user models.Usuario, senhaHash []byte) (int64, error) {
 	var id int
 
 	query := `
@@ -52,7 +52,7 @@ func (pr *UsuarioServices) CreateUsuario(user models.Usuario, senhaHash []byte) 
 		return 0, err
 	}
 
-	return id, nil
+	return int64(id), nil
 }
 
 func (pr *UsuarioServices) GetUsuarios() ([]models.Usuario, error) {
@@ -126,3 +126,9 @@ func (pr UsuarioServices) GetUsuarioById(id int) (models.Usuario, error) {
 	return usuario, nil
 
 }
+
+// func (pr UsuarioServices) PatchUsuarioById(id int, usuario models.Usuario) (models.Usuario, error) {
+// 	var id int
+
+// 	query  := `update usuario`
+// }

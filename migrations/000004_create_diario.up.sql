@@ -12,6 +12,7 @@ CREATE TABLE diario_obra (
         status_aprovacao IN ('pendente', 'aprovado', 'rejeitado')
     ),
     created_at TIMESTAMP DEFAULT NOW(),
+    update_at TIMESTAMP,
     UNIQUE(obra_id, data, periodo)
 );
 
@@ -19,3 +20,4 @@ CREATE INDEX idx_diario_obra_id ON diario_obra(obra_id);
 CREATE INDEX idx_diario_data ON diario_obra(data);
 CREATE INDEX idx_diario_status ON diario_obra(status_aprovacao);
 CREATE INDEX idx_diario_responsavel ON diario_obra(responsavel_id);
+

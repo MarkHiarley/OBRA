@@ -1,17 +1,22 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"gopkg.in/guregu/null.v4"
+)
 
 type DiarioObra struct {
-	ID                   int       `json:"id"`
-	ObraID               int       `json:"obra_id" binding:"required"`
-	Data                 string    `json:"data" binding:"required"` // "2024-10-08"
-	Periodo              string    `json:"periodo"`
-	AtividadesRealizadas string    `json:"atividades_realizadas" binding:"required"`
-	Ocorrencias          string    `json:"ocorrencias,omitempty"`
-	Observacoes          string    `json:"observacoes,omitempty"`
-	ResponsavelID        int       `json:"responsavel_id,omitempty"`
-	AprovadoPorID        int       `json:"aprovado_por_id,omitempty"`
-	StatusAprovacao      string    `json:"status_aprovacao"`
-	CreatedAt            time.Time `json:"createdAt"`
+	ID                   null.Int    `json:"id"`
+	ObraID               null.Int    `json:"obra_id" binding:"required"`
+	Data                 null.String `json:"data" binding:"required"` // "2024-10-08"
+	Periodo              null.String `json:"periodo"`
+	AtividadesRealizadas null.String `json:"atividades_realizadas" binding:"required"`
+	Ocorrencias          null.String `json:"ocorrencias,omitempty"`
+	Observacoes          null.String `json:"observacoes,omitempty"`
+	ResponsavelID        null.Int    `json:"responsavel_id,omitempty"`
+	AprovadoPorID        null.Int    `json:"aprovado_por_id,omitempty"`
+	StatusAprovacao      null.String `json:"status_aprovacao"`
+	CreatedAt            time.Time   `json:"createdAt"`
+	UpdatedAt            null.Time   `json:"updatedAt"`
 }

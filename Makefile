@@ -3,7 +3,7 @@ include .env
 export
 
 # URL de conexão do Postgres
-DB_URL=postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable
+DB_URL=postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable
 
 .PHONY: help migrate-up migrate-down migrate-create docker-up docker-down run install-migrate
 

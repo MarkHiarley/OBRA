@@ -31,3 +31,8 @@ func (pu *PessoaUseCase) CreatePessoa(newPessoa models.Pessoa) (models.Pessoa, e
 func (pu *PessoaUseCase) GetPessoas() ([]models.Pessoa, error) {
 	return pu.services.GetPessoas()
 }
+
+func (pu *PessoaUseCase) GetPessoaById(id int64) (models.Pessoa, error) {
+
+	return pu.services.GetPessoaById(id)
+}

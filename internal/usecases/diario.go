@@ -3,6 +3,7 @@ package usecases
 import (
 	"codxis-obras/internal/models"
 	"codxis-obras/internal/services"
+	"fmt"
 )
 
 type DiarioUseCase struct {
@@ -22,11 +23,31 @@ func (pu *DiarioUseCase) CreateDiario(newDiario models.DiarioObra) (models.Diari
 	if err != nil {
 		return models.DiarioObra{}, err
 	}
-	newDiario.ID = diarioId
+
+	fmt.Println(diarioId, newDiario)
+
+	newDiario.ID.Int64 = diarioId
+	newDiario.ID.Valid = true
 
 	return newDiario, nil
 }
 
 func (pu *DiarioUseCase) GetDiarios() ([]models.DiarioObra, error) {
 	return pu.services.GetDiarios()
+}
+
+func (pu *DiarioUseCase) GetDiarioById(id int64) (models.DiarioObra, error) {
+
+	diario, err := pu.services.GetDiarioById(id)
+
+	if err != nil {
+		return models.DiarioObra{}, fmt.Errorf("usuário não encontrado")
+
+	}
+
+	return diario, err
+}
+
+func (pu *DiarioUseCase) GetDiariosByObraId(id int64) ([]models.DiarioObra, error) {
+	return pu.services.GetDiarioByObraId(id)
 }

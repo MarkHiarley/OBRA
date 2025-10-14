@@ -19,7 +19,8 @@ CREATE TABLE obra (
     endereco_cep VARCHAR(10),
     observacoes TEXT,
     ativo BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP 
 );
 
 CREATE INDEX idx_obra_status ON obra(status);

@@ -30,8 +30,9 @@ func (pu *UsuarioUseCase) CreateUsuario(newUser models.Usuario) (models.Usuario,
 	if err != nil {
 		return models.Usuario{}, err
 	}
-	newUser.ID = userId
 
+	newUser.ID.Int64 = userId
+	newUser.ID.Valid = true
 	return newUser, nil
 }
 

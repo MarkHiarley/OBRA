@@ -31,3 +31,8 @@ func (pu *ObraUseCase) CreateObra(newObra models.Obra) (models.Obra, error) {
 func (pu *ObraUseCase) GetObras() ([]models.Obra, error) {
 	return pu.services.GetObras()
 }
+
+func (pu *ObraUseCase) GetObraById(id int64) (models.Obra, error) {
+
+	return pu.services.GetObraById(id)
+}

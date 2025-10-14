@@ -76,3 +76,38 @@ func (pr *PessoaServices) GetPessoas() ([]models.Pessoa, error) {
 	rows.Close()
 	return pessoasList, nil
 }
+
+func (pr PessoaServices) GetPessoaById(id int64) (models.Pessoa, error) {
+
+	//id, nome, email, tipo_documento, documento, telefone, perfil_acesso, ativo, created_at, updated_at
+	query := "select id, nome, tipo, documento, email, telefone, cargo, ativo,created_at, updated_at from pessoa where id = $1"
+
+	row := pr.connection.QueryRow(query, id)
+
+	var pessoa models.Pessoa
+
+	err := row.Scan(
+		&pessoa.ID,
+		&pessoa.Nome,
+		&pessoa.TipoDocumento,
+		&pessoa.Documento,
+		&pessoa.Email,
+		&pessoa.Telefone,
+		&pessoa.Cargo,
+		&pessoa.Ativo,
+		&pessoa.CreatedAt,
+		&pessoa.UpdatedAt,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+
+			return models.Pessoa{}, fmt.Errorf("pessoa não encontrado")
+		}
+
+		return models.Pessoa{}, err
+	}
+
+	return pessoa, nil
+
+}
