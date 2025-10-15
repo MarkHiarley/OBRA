@@ -2,8 +2,11 @@ package services
 
 import (
 	"codxis-obras/internal/models"
+	"context"
 	"database/sql"
 	"fmt"
+	"log"
+	"time"
 )
 
 type ObraServices struct {
@@ -140,4 +143,86 @@ func (pr ObraServices) GetObraById(id int64) (models.Obra, error) {
 
 	return obra, nil
 
+}
+func (pr ObraServices) PutObra(id int, ObraToUpdate models.Obra) (models.Obra, error) {
+
+	query := `
+        UPDATE obra 
+        SET 
+            nome = $1,
+            contrato_numero = $2, 
+            contratante_id = $3, 
+            responsavel_id = $4, 
+            data_inicio = $5, 
+            prazo_dias = $6, 
+            data_fim_prevista = $7,
+            orcamento = $8,
+            status = $9,
+            endereco_rua = $10,
+            endereco_numero = $11,
+            endereco_bairro = $12,
+            endereco_cidade = $13,
+            endereco_estado = $14,
+            endereco_cep = $15,
+            observacoes = $16,
+            ativo = $17,
+			updated_at =$18
+        WHERE id = $19
+        RETURNING id, nome, contrato_numero, contratante_id, responsavel_id, data_inicio, prazo_dias, data_fim_prevista,orcamento,status, endereco_rua,endereco_numero, endereco_bairro, endereco_cidade,endereco_estado, endereco_cep, observacoes,ativo,created_at, updated_at`
+	var updatedObra models.Obra
+
+	err := pr.connection.QueryRowContext(context.Background(), query,
+		ObraToUpdate.Nome.String,
+		ObraToUpdate.ContratoNumero.String,
+		ObraToUpdate.ContratanteID.Int64,
+		ObraToUpdate.ResponsavelID.Int64,
+		ObraToUpdate.DataInicio.String,
+		ObraToUpdate.PrazoDias.Int64,
+		ObraToUpdate.DataFimPrevista.String,
+		ObraToUpdate.Orcamento.Float64,
+		ObraToUpdate.Status.String,
+		ObraToUpdate.EnderecoRua.String,
+		ObraToUpdate.EnderecoNumero.String,
+		ObraToUpdate.EnderecoBairro.String,
+		ObraToUpdate.EnderecoCidade.String,
+		ObraToUpdate.EnderecoEstado.String,
+		ObraToUpdate.EnderecoCep.String,
+		ObraToUpdate.Observacoes.String,
+		ObraToUpdate.Ativo.Bool,
+		time.Now(),
+		id,
+	).Scan(
+		&updatedObra.ID,
+		&updatedObra.Nome,
+		&updatedObra.ContratoNumero,
+		&updatedObra.ContratanteID,
+		&updatedObra.ResponsavelID,
+		&updatedObra.DataInicio,
+		&updatedObra.PrazoDias,
+		&updatedObra.DataFimPrevista,
+		&updatedObra.Orcamento,
+		&updatedObra.Status,
+		&updatedObra.EnderecoRua,
+		&updatedObra.EnderecoNumero,
+		&updatedObra.EnderecoBairro,
+		&updatedObra.EnderecoCidade,
+		&updatedObra.EnderecoEstado,
+		&updatedObra.EnderecoCep,
+		&updatedObra.Observacoes,
+		&updatedObra.Ativo,
+		&updatedObra.CreatedAt,
+		&updatedObra.UpdatedAt,
+	)
+
+	if err != nil {
+
+		if err == sql.ErrNoRows {
+			return models.Obra{}, err
+		}
+
+		log.Printf("Error updating user: %v\n", err)
+		return models.Obra{}, fmt.Errorf("não foi possivel atualizar essa obra: %w", err)
+	}
+
+	return updatedObra, nil
 }

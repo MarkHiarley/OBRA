@@ -23,6 +23,6 @@ type Obra struct {
 	EnderecoCep     null.String `json:"endereco_cep,omitempty"`
 	Observacoes     null.String `json:"observacoes,omitempty"`
 	Ativo           null.Bool   `json:"ativo"`
-	CreatedAt       null.Time   `json:"createdAt"`
-	UpdatedAt       null.Time   `json:"updatedAt"`
+	CreatedAt       null.Time   `json:"created_at"`
+	UpdatedAt       null.Time   `json:"updated_at"`
 }

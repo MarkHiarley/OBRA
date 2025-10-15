@@ -66,6 +66,7 @@ func main() {
 
 	server.PUT("/usuarios/:id", usuarioController.PutUsuarioById)
 	server.PUT("/pessoas/:id", pessoaController.PutPessoaById)
+	server.PUT("/obras/:id", obraController.PutObraById)
 	port := os.Getenv("API_PORT")
 	server.Run(":" + port)
 }
