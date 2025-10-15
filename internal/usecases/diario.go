@@ -3,6 +3,7 @@ package usecases
 import (
 	"codxis-obras/internal/models"
 	"codxis-obras/internal/services"
+	"database/sql"
 	"fmt"
 )
 
@@ -50,4 +51,18 @@ func (pu *DiarioUseCase) GetDiarioById(id int64) (models.DiarioObra, error) {
 
 func (pu *DiarioUseCase) GetDiariosByObraId(id int64) ([]models.DiarioObra, error) {
 	return pu.services.GetDiarioByObraId(id)
+}
+
+func (pu *DiarioUseCase) PutDiario(id int, updatedDiario models.DiarioObra) (models.DiarioObra, error) {
+
+	updatedDiario, err := pu.services.PutDiarios(id, updatedDiario)
+	if err != nil {
+		if err == sql.ErrNoRows {
+
+			return models.DiarioObra{}, ErrUserNotFound
+		}
+		return models.DiarioObra{}, err
+	}
+
+	return updatedDiario, nil
 }

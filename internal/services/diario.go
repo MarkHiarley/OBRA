@@ -2,8 +2,11 @@ package services
 
 import (
 	"codxis-obras/internal/models"
+	"context"
 	"database/sql"
 	"fmt"
+	"log"
+	"time"
 )
 
 type DiarioServices struct {
@@ -160,4 +163,64 @@ func (pr DiarioServices) GetDiarioByObraId(id int64) ([]models.DiarioObra, error
 	rows.Close()
 	return diarioList, nil
 
+}
+
+func (pr DiarioServices) PutDiarios(id int, diarioToUpdate models.DiarioObra) (models.DiarioObra, error) {
+
+	query := `
+        UPDATE diario_obra 
+        SET 
+            obra_id = $1,
+            data = $2,
+            periodo = $3,
+            atividades_realizadas = $4,
+            ocorrencias = $5,
+            observacoes = $6,
+            responsavel_id = $7,
+            aprovado_por_id = $8,
+            status_aprovacao = $9,
+			update_at =$10
+		WHERE id = $11
+		RETURNING id, obra_id, data, periodo, atividades_realizadas, ocorrencias, observacoes, responsavel_id, aprovado_por_id, status_aprovacao, created_at, update_at`
+	var updatedDiario models.DiarioObra
+
+	err := pr.connection.QueryRowContext(context.Background(), query,
+		diarioToUpdate.ObraID,
+		diarioToUpdate.Data,
+		diarioToUpdate.Periodo,
+		diarioToUpdate.AtividadesRealizadas,
+		diarioToUpdate.Ocorrencias,
+		diarioToUpdate.Observacoes,
+		diarioToUpdate.ResponsavelID,
+		diarioToUpdate.AprovadoPorID,
+		diarioToUpdate.StatusAprovacao,
+		time.Now(),
+		id, // The ID for the WHERE clause
+	).Scan(
+
+		&updatedDiario.ID,
+		&updatedDiario.ObraID,
+		&updatedDiario.Data,
+		&updatedDiario.Periodo,
+		&updatedDiario.AtividadesRealizadas,
+		&updatedDiario.Ocorrencias,
+		&updatedDiario.Observacoes,
+		&updatedDiario.ResponsavelID,
+		&updatedDiario.AprovadoPorID,
+		&updatedDiario.StatusAprovacao,
+		&updatedDiario.CreatedAt,
+		&updatedDiario.UpdatedAt,
+	)
+
+	if err != nil {
+
+		if err == sql.ErrNoRows {
+			return models.DiarioObra{}, err
+		}
+
+		log.Printf("Error updating user: %v\n", err)
+		return models.DiarioObra{}, fmt.Errorf("não foi possivel atualizar esse diario: %w", err)
+	}
+
+	return updatedDiario, nil
 }
