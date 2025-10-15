@@ -3,6 +3,8 @@ package postgres
 import (
 	"database/sql"
 	"fmt"
+	"log"
+	"os"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -11,33 +13,34 @@ import (
 func ConnectDB() (*sql.DB, error) {
 
 	err := godotenv.Load()
-	var (
-		host     = "localhost"
-		port     = "5432"
-		user     = "obras"
-		password = "7894"
-		dbname   = "obrasdb"
-	)
-
 	if err != nil {
-		fmt.Println("Error loading .env file")
+
+		log.Println("Warning: Could not find or load .env file. Using system environment variables.")
 	}
 
-	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
-		"password=%s dbname=%s sslmode=disable",
+	host := os.Getenv("DB_HOST")
+	port := os.Getenv("DB_PORT")
+	user := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASSWORD")
+	dbname := os.Getenv("DB_NAME")
+
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
 
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
-		panic(err)
+
+		return nil, fmt.Errorf("failed to open database connection: %w", err)
 	}
+
 	err = db.Ping()
-
 	if err != nil {
-		panic(err)
+
+		db.Close()
+		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	fmt.Println("conectado ao: " + dbname)
+	fmt.Println("Successfully connected to: " + dbname)
 
 	return db, nil
 }

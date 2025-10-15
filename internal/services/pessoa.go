@@ -2,8 +2,11 @@ package services
 
 import (
 	"codxis-obras/internal/models"
+	"context"
 	"database/sql"
 	"fmt"
+	"log"
+	"time"
 )
 
 type PessoaServices struct {
@@ -110,4 +113,58 @@ func (pr PessoaServices) GetPessoaById(id int64) (models.Pessoa, error) {
 
 	return pessoa, nil
 
+}
+
+func (pr PessoaServices) PutPessoa(id int, pessoaToUpdate models.Pessoa) (models.Pessoa, error) {
+
+	query := `
+        UPDATE pessoa 
+        SET 
+            nome = $1,
+            tipo = $2, 
+            documento = $3, 
+            email = $4, 
+            telefone = $5, 
+            cargo = $6, 
+            ativo = $7,
+			updated_at =$8
+        WHERE id = $9
+        RETURNING id, nome, tipo, documento, email, telefone, cargo, ativo, created_at, updated_at`
+	var updatedPessoa models.Pessoa
+
+	err := pr.connection.QueryRowContext(context.Background(), query,
+		pessoaToUpdate.Nome.String,
+		pessoaToUpdate.TipoDocumento.String,
+		pessoaToUpdate.Documento.String,
+		pessoaToUpdate.Email.String,
+		pessoaToUpdate.Telefone.String,
+		pessoaToUpdate.Cargo.String,
+		pessoaToUpdate.Ativo.Bool,
+		time.Now(),
+		id, // The ID for the WHERE clause
+	).Scan(
+
+		&updatedPessoa.ID,
+		&updatedPessoa.Nome,
+		&updatedPessoa.TipoDocumento,
+		&updatedPessoa.Documento,
+		&updatedPessoa.Email,
+		&updatedPessoa.Telefone,
+		&updatedPessoa.Cargo,
+		&updatedPessoa.Ativo,
+		&updatedPessoa.CreatedAt,
+		&updatedPessoa.UpdatedAt,
+	)
+
+	if err != nil {
+
+		if err == sql.ErrNoRows {
+			return models.Pessoa{}, err
+		}
+
+		log.Printf("Error updating user: %v\n", err)
+		return models.Pessoa{}, fmt.Errorf("não foi possivel atualizar essa pessoa: %w", err)
+	}
+
+	return updatedPessoa, nil
 }

@@ -3,6 +3,7 @@ package controller
 import (
 	"codxis-obras/internal/models"
 	"codxis-obras/internal/usecases"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -96,43 +97,73 @@ func (p *usuarioController) GetUsuarioById(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, usuario)
 }
 
-// func (p *usuarioController) PatchUsuarioById(ctx *gin.Context) {
-// 	id := ctx.Param("id")
+func (p *usuarioController) PutUsuarioById(ctx *gin.Context) {
+	id := ctx.Param("id")
+	if id == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "ID cannot be null"})
+		return
+	}
+	var updatedUsuario models.Usuario
+	if err := ctx.ShouldBindJSON(&updatedUsuario); err != nil {
+		// LOG 1: Imprime o erro exato do binding no seu terminal
+		log.Printf("!!! ERRO NO BINDING DO JSON: %v", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON data: " + err.Error()})
+		return
+	}
 
-// 	var UpdatedUsuario models.Usuario
+	idNumero, err := strconv.Atoi(id)
+	if err != nil {
+		message := models.Response{Messagem: "tem que ser número"}
 
-// 	if id == "" {
-// 		ctx.JSON(http.StatusBadRequest, gin.H{
-// 			"message": "id não pode ser nulo",
-// 		})
-// 		return
-// 	}
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error":   err.Error(),
+			"message": message.Messagem,
+		})
+		return
+	}
+	if !updatedUsuario.Nome.Valid || updatedUsuario.Nome.String == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "O campo 'Nome' é obrigatório."})
+		return // Stop processing
+	}
+	if !updatedUsuario.Email.Valid || updatedUsuario.Email.String == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "O campo 'Email' é obrigatório."})
+		return // Stop processing
+	}
+	if !updatedUsuario.TipoDocumento.Valid || updatedUsuario.TipoDocumento.String == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "O campo 'TipoDocumento' é obrigatório."})
+		return // Stop processing
+	}
+	if !updatedUsuario.Documento.Valid || updatedUsuario.Documento.String == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "O campo 'Documento' é obrigatório."})
+		return // Stop processing
+	}
+	if !updatedUsuario.Telefone.Valid || updatedUsuario.Telefone.String == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "O campo 'telefone' é obrigatório."})
+		return // Stop processing
+	}
+	if !updatedUsuario.PerfilAcesso.Valid || updatedUsuario.PerfilAcesso.String == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "O campo 'Perfil acesso' é obrigatório."})
+		return // Stop processing
+	}
+	if !updatedUsuario.Ativo.Valid {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "O campo 'ativo' é obrigatório."})
+		return // Para o processamento
+	}
 
-// 	idNumero, err := strconv.Atoi(id)
-// 	if err != nil {
-// 		message := models.Response{Messagem: "tem que ser número"}
+	usuario, err := p.usuarioUseCase.PutUsuario(idNumero, updatedUsuario)
+	if err != nil {
+		if err.Error() == "usuário não encontrado" {
+			ctx.JSON(http.StatusNotFound, gin.H{
+				"message": err.Error(),
+			})
+			return
+		}
 
-// 		ctx.JSON(http.StatusBadRequest, gin.H{
-// 			"error":   err.Error(),
-// 			"message": message.Messagem,
-// 		})
-// 		return
-// 	}
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
 
-// 	usuario, err := p.usuarioUseCase.PatchUsuarioById(idNumero, UpdatedUsuario)
-// 	if err != nil {
-// 		if err.Error() == "usuário não encontrado" {
-// 			ctx.JSON(http.StatusNotFound, gin.H{
-// 				"message": err.Error(),
-// 			})
-// 			return
-// 		}
-
-// 		ctx.JSON(http.StatusInternalServerError, gin.H{
-// 			"error": err.Error(),
-// 		})
-// 		return
-// 	}
-
-// 	ctx.JSON(http.StatusOK, usuario)
-// }
+	ctx.JSON(http.StatusOK, usuario)
+}

@@ -5,12 +5,20 @@ import (
 	"codxis-obras/internal/services"
 	"codxis-obras/internal/usecases"
 	"codxis-obras/pkg/postgres"
+	"log"
+	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
 	server := gin.Default()
+	err := godotenv.Load()
+	if err != nil {
+
+		log.Println("Warning: Could not find or load .env file. Using system environment variables.")
+	}
 
 	// api := "/v1"
 
@@ -37,10 +45,10 @@ func main() {
 	diarioController := controller.NewDiarioController(diarioUseCase)
 
 	//posts
-	server.POST("/pessoa", pessoaController.CreatePessoa)
-	server.POST("/usuario", usuarioController.CreateUsuario)
-	server.POST("/obra", obraController.CreateObra)
-	server.POST("/diario", diarioController.CreateDiario)
+	server.POST("/pessoas", pessoaController.CreatePessoa)
+	server.POST("/usuarios", usuarioController.CreateUsuario)
+	server.POST("/obras", obraController.CreateObra)
+	server.POST("/diarios", diarioController.CreateDiario)
 
 	//gest
 	server.GET("/usuarios", usuarioController.GetUsuarios)
@@ -48,13 +56,16 @@ func main() {
 	server.GET("/obras", obraController.GetObras)
 	server.GET("/diarios", diarioController.GetDiarios)
 
-	server.GET("/usuario/:id", usuarioController.GetUsuarioById)
-	server.GET("/pessoa/:id", pessoaController.GetPessoaById)
-	server.GET("/obra/:id", obraController.GetObraById)
-	server.GET("/diario/:id", diarioController.GetDiarioById)
+	server.GET("/usuarios/:id", usuarioController.GetUsuarioById)
+	server.GET("/pessoas/:id", pessoaController.GetPessoaById)
+	server.GET("/obras/:id", obraController.GetObraById)
+	server.GET("/diarios/:id", diarioController.GetDiarioById)
 	server.GET("/diarios/:id/obra", diarioController.GetDiariosByObraId)
 
 	//patch
 
-	server.Run(":3000")
+	server.PUT("/usuarios/:id", usuarioController.PutUsuarioById)
+	server.PUT("/pessoas/:id", pessoaController.PutPessoaById)
+	port := os.Getenv("API_PORT")
+	server.Run(":" + port)
 }

@@ -3,6 +3,7 @@ package usecases
 import (
 	"codxis-obras/internal/models"
 	"codxis-obras/internal/services"
+	"database/sql"
 )
 
 type PessoaUseCase struct {
@@ -35,4 +36,18 @@ func (pu *PessoaUseCase) GetPessoas() ([]models.Pessoa, error) {
 func (pu *PessoaUseCase) GetPessoaById(id int64) (models.Pessoa, error) {
 
 	return pu.services.GetPessoaById(id)
+}
+
+func (pu *PessoaUseCase) PutPessoa(id int, updatedPessoa models.Pessoa) (models.Pessoa, error) {
+
+	updatedPessoa, err := pu.services.PutPessoa(id, updatedPessoa)
+	if err != nil {
+		if err == sql.ErrNoRows {
+
+			return models.Pessoa{}, ErrUserNotFound
+		}
+		return models.Pessoa{}, err
+	}
+
+	return updatedPessoa, nil
 }

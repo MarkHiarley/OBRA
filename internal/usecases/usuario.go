@@ -3,6 +3,8 @@ package usecases
 import (
 	"codxis-obras/internal/models"
 	"codxis-obras/internal/services"
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"golang.org/x/crypto/bcrypt"
@@ -11,6 +13,8 @@ import (
 type UsuarioUseCase struct {
 	services services.UsuarioServices
 }
+
+var ErrUserNotFound = errors.New("usuário não encontrado")
 
 func NewUsuarioUsecase(services services.UsuarioServices) UsuarioUseCase {
 	return UsuarioUseCase{
@@ -43,4 +47,18 @@ func (pu *UsuarioUseCase) GetUsuarios() ([]models.Usuario, error) {
 func (pu *UsuarioUseCase) GetUsuariosById(id int) (models.Usuario, error) {
 
 	return pu.services.GetUsuarioById(id)
+}
+
+func (pu *UsuarioUseCase) PutUsuario(id int, UpdateUsuario models.Usuario) (models.Usuario, error) {
+
+	UpdateUsuario, err := pu.services.PutUsuario(id, UpdateUsuario)
+	if err != nil {
+		if err == sql.ErrNoRows {
+
+			return models.Usuario{}, ErrUserNotFound
+		}
+		return models.Usuario{}, err
+	}
+
+	return UpdateUsuario, nil
 }

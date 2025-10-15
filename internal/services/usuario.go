@@ -2,8 +2,11 @@ package services
 
 import (
 	"codxis-obras/internal/models"
+	"context"
 	"database/sql"
 	"fmt"
+	"log"
+	"time"
 )
 
 type UsuarioServices struct {
@@ -95,7 +98,7 @@ func (pr *UsuarioServices) GetUsuarios() ([]models.Usuario, error) {
 func (pr UsuarioServices) GetUsuarioById(id int) (models.Usuario, error) {
 
 	//id, nome, email, tipo_documento, documento, telefone, perfil_acesso, ativo, created_at, updated_at
-	query := "select id, nome, email, tipo_documento, documento, telefone, perfil_acesso, ativo, created_at, updated_at from usuario where id = $1"
+	query := "select id, nome, email, tipo_documento, documento, telefone, perfil_acesso, ativo, created_at, updated_at from usuario where id = $1 "
 
 	row := pr.connection.QueryRow(query, id)
 
@@ -127,8 +130,57 @@ func (pr UsuarioServices) GetUsuarioById(id int) (models.Usuario, error) {
 
 }
 
-// func (pr UsuarioServices) PatchUsuarioById(id int, usuario models.Usuario) (models.Usuario, error) {
-// 	var id int
+func (pr UsuarioServices) PutUsuario(id int, usuarioToUpdate models.Usuario) (models.Usuario, error) {
 
-// 	query  := `update usuario`
-// }
+	query := `
+        UPDATE usuario 
+        SET 
+            nome = $1, 
+            email = $2, 
+            tipo_documento = $3, 
+            documento = $4, 
+            telefone = $5, 
+            perfil_acesso = $6, 
+            ativo = $7,
+			updated_at =$8
+        WHERE id = $9
+        RETURNING id, nome, email, tipo_documento, documento, telefone, perfil_acesso, ativo, created_at, updated_at`
+	var updatedUsuario models.Usuario
+	perfilArray := fmt.Sprintf("{%s}", usuarioToUpdate.PerfilAcesso.String)
+
+	err := pr.connection.QueryRowContext(context.Background(), query,
+		usuarioToUpdate.Nome.String,
+		usuarioToUpdate.Email.String,
+		usuarioToUpdate.TipoDocumento.String,
+		usuarioToUpdate.Documento.String,
+		usuarioToUpdate.Telefone.String,
+		perfilArray,
+		usuarioToUpdate.Ativo.Bool,
+		time.Now(),
+		id, // The ID for the WHERE clause
+	).Scan(
+
+		&updatedUsuario.ID,
+		&updatedUsuario.Nome,
+		&updatedUsuario.Email,
+		&updatedUsuario.TipoDocumento,
+		&updatedUsuario.Documento,
+		&updatedUsuario.Telefone,
+		&updatedUsuario.PerfilAcesso,
+		&updatedUsuario.Ativo,
+		&updatedUsuario.CreatedAt,
+		&updatedUsuario.UpdatedAt,
+	)
+
+	if err != nil {
+
+		if err == sql.ErrNoRows {
+			return models.Usuario{}, err
+		}
+
+		log.Printf("Error updating user: %v\n", err)
+		return models.Usuario{}, fmt.Errorf("could not update user: %w", err)
+	}
+
+	return updatedUsuario, nil
+}
