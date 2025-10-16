@@ -3,6 +3,7 @@ package controller
 import (
 	"codxis-obras/internal/models"
 	"codxis-obras/internal/usecases"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -166,4 +167,51 @@ func (p *usuarioController) PutUsuarioById(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, usuario)
+}
+
+func (p *usuarioController) DeleteUsuarioById(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	if id == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "id não pode ser nulo",
+		})
+		return
+	}
+
+	idNumero, err := strconv.Atoi(id)
+	if err != nil {
+		message := models.Response{Messagem: "tem que ser número"}
+
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error":   err.Error(),
+			"message": message.Messagem,
+		})
+		return
+	}
+
+	usuario := p.usuarioUseCase.DeleteUsuarioById(idNumero)
+	if usuario != nil {
+		if usuario == fmt.Errorf("nenhum usuário encontrado com o ID fornecido") {
+			ctx.JSON(http.StatusNotFound, gin.H{
+				"message": usuario,
+			})
+			return
+		}
+
+		if usuario == fmt.Errorf("erro ao executar a query de delete") {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": usuario,
+			})
+		}
+
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": usuario,
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "deu bom man, foi deletado",
+	})
 }

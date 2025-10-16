@@ -46,7 +46,16 @@ func (pu *UsuarioUseCase) GetUsuarios() ([]models.Usuario, error) {
 
 func (pu *UsuarioUseCase) GetUsuariosById(id int) (models.Usuario, error) {
 
-	return pu.services.GetUsuarioById(id)
+	GetUsuario, err := pu.services.GetUsuarioById(id)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+
+			return models.Usuario{}, ErrUserNotFound
+		}
+		return models.Usuario{}, err
+	}
+	return GetUsuario, nil
 }
 
 func (pu *UsuarioUseCase) PutUsuario(id int, UpdateUsuario models.Usuario) (models.Usuario, error) {
@@ -61,4 +70,24 @@ func (pu *UsuarioUseCase) PutUsuario(id int, UpdateUsuario models.Usuario) (mode
 	}
 
 	return UpdateUsuario, nil
+}
+
+func (pu *UsuarioUseCase) DeleteUsuarioById(id int) error {
+
+	err := pu.services.DeleteUsuarioById(id)
+	if err != nil {
+
+		if err == fmt.Errorf("erro ao executar a query de delete") {
+			return fmt.Errorf("erro ao executar a query de delete")
+		}
+		if err == fmt.Errorf("erro ao obter linhas afetadas") {
+			return fmt.Errorf("erro ao obter linhas afetadas")
+		}
+		if err == fmt.Errorf("nenhum usuário encontrado com o ID fornecido") {
+			return fmt.Errorf("nenhum usuário encontrado com o ID fornecido")
+		}
+		return err
+	}
+
+	return nil
 }

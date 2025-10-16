@@ -184,3 +184,25 @@ func (pr UsuarioServices) PutUsuario(id int, usuarioToUpdate models.Usuario) (mo
 
 	return updatedUsuario, nil
 }
+
+func (pr *UsuarioServices) DeleteUsuarioById(id int) error {
+	query := "DELETE FROM usuario WHERE id = $1"
+
+	result, err := pr.connection.ExecContext(context.Background(), query, id)
+	if err != nil {
+
+		return fmt.Errorf("erro ao executar a query de delete")
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+
+		return fmt.Errorf("erro ao obter linhas afetadas")
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("nenhum usuário encontrado com o ID fornecido")
+	}
+
+	return nil
+}
