@@ -9,8 +9,7 @@ services:
     ports:
       - "5440:5432"
     volumes:
-      - pgdata:/var/lib/postgres/data
-
+      - pgdata:/var/lib/postgresql/data  
   api_obras:
     container_name: api_obras
     build: .
