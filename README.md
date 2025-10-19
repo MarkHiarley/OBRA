@@ -108,26 +108,34 @@ cd OBRA
 
 ### 2. Configure as variáveis de ambiente
 
-Crie ou edite o arquivo `.env` na raiz do projeto:
+Crie um arquivo `.env` na raiz do projeto:
+
+```bash
+cp .env.example .env
+```
+
+Ou crie manualmente com o seguinte conteúdo:
 
 ```env
-# Configuração do Banco de Dados
-DB_HOST=db_obras
+# Database Configuration
+DB_HOST=localhost
 DB_PORT=5432
 DB_USER=obras
-DB_PASSWORD=7894
+DB_PASSWORD=sua_senha_aqui
 DB_NAME=obrasdb
 
-# Porta de mapeamento do host para o banco
+# Database Host Port (for local development)
 DB_HOST_PORT=5440
 
-# Porta da API
+# API Configuration
 API_PORT=9090
 ```
 
-> ⚠️ **Importante**: 
-> - `DB_PORT=5432` é a porta interna do container (não altere)
-> - `DB_HOST_PORT=5440` é a porta exposta no seu computador (pode alterar se necessário)
+> ⚠️ **Importante para Docker**: 
+> - As variáveis `DB_HOST` e `DB_PORT` são sobrescritas automaticamente no `docker-compose.yml`
+> - No container, `DB_HOST=db_obras` e `DB_PORT=5432` (porta interna do container)
+> - Para desenvolvimento local (sem Docker), use `DB_HOST=localhost` e `DB_PORT=5432`
+> - `DB_HOST_PORT=5440` é a porta exposta no seu computador para acesso externo ao banco
 
 ---
 
@@ -135,15 +143,17 @@ API_PORT=9090
 
 ### Variáveis de Ambiente
 
-| Variável | Descrição | Padrão |
-|----------|-----------|--------|
-| `DB_HOST` | Host do banco de dados | `db_obras` |
-| `DB_PORT` | Porta interna do PostgreSQL | `5432` |
-| `DB_USER` | Usuário do banco | `obras` |
-| `DB_PASSWORD` | Senha do banco | `7894` |
-| `DB_NAME` | Nome do banco de dados | `obrasdb` |
-| `DB_HOST_PORT` | Porta exposta no host | `5440` |
-| `API_PORT` | Porta da API | `9090` |
+| Variável | Descrição | Valor Docker | Valor Local |
+|----------|-----------|--------------|-------------|
+| `DB_HOST` | Host do banco de dados | `db_obras` (auto) | `localhost` |
+| `DB_PORT` | Porta do PostgreSQL | `5432` (auto) | `5432` |
+| `DB_USER` | Usuário do banco | `obras` | `obras` |
+| `DB_PASSWORD` | Senha do banco | - | - |
+| `DB_NAME` | Nome do banco de dados | `obrasdb` | `obrasdb` |
+| `DB_HOST_PORT` | Porta exposta no host | `5440` | N/A |
+| `API_PORT` | Porta da API | `9090` | `9090` |
+
+> 💡 **Dica**: O `docker-compose.yml` configura automaticamente `DB_HOST=db_obras` e `DB_PORT=5432` para comunicação entre containers
 
 ---
 
