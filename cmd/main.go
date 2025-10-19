@@ -72,6 +72,10 @@ func main() {
 	//delete
 
 	server.DELETE("/usuarios/:id", usuarioController.DeleteUsuarioById)
+	server.DELETE("/pessoas/:id", pessoaController.DeletePessoaById)
+	server.DELETE("/obras/:id", obraController.DeleteObraById)
+	server.DELETE("/diarios/:id", diarioController.DeleteDiariosById)
+
 	port := os.Getenv("API_PORT")
 	server.Run(":" + port)
 }

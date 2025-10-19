@@ -209,3 +209,44 @@ func (p *ObraController) PutObraById(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, obra)
 }
+
+func (p *ObraController) DeleteObraById(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	if id == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "ID é obrigatório",
+		})
+		return
+	}
+
+	idNumero, err := strconv.Atoi(id)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "ID deve ser um número válido",
+		})
+		return
+	}
+
+	// ✅ CORRETO: Nome da variável é 'err', não 'obra'
+	err = p.ObraUseCase.DeleteObraById(idNumero)
+	if err != nil {
+		// ✅ CORRETO: Comparar a MENSAGEM do erro
+		if err.Error() == "Obra não encontrada" {
+			ctx.JSON(http.StatusNotFound, gin.H{
+				"error": "Obra não encontrada",
+			})
+			return
+		}
+
+		// ✅ Qualquer outro erro é interno
+		log.Printf("Erro ao deletar obra ID %d: %v", idNumero, err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Erro ao deletar obra",
+		})
+		return
+	}
+
+	// ✅ Sucesso - DELETE retorna 204 No Content
+	ctx.JSON(http.StatusNoContent, nil)
+}

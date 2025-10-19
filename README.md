@@ -2,7 +2,29 @@
 
 API RESTful para gerenciamento de obras, construída em Go com Gin Framework e PostgreSQL.
 
-## 📋 Índice
+## � Quick Start
+
+```bash
+# 1. Clone e configure
+git clone https://github.com/MarkHiarley/OBRA.git
+cd OBRA
+
+# 2. Inicie os containers
+docker compose up -d
+
+# 3. Execute as migrations
+chmod +x run-migrations.sh
+./run-migrations.sh
+
+# 4. Acesse a API
+curl http://localhost:9090/pessoas
+```
+
+Pronto! A API está rodando em `http://localhost:9090` 🎉
+
+---
+
+## �📋 Índice
 
 - [Sobre o Projeto](#sobre-o-projeto)
 - [Tecnologias](#tecnologias)
@@ -130,20 +152,45 @@ API_PORT=9090
 ### Usando Docker Compose (Recomendado)
 
 ```bash
-# Iniciar todos os serviços
+# 1. Iniciar todos os serviços
 docker compose up -d
 
-# Ver logs da API
+# 2. Aguardar o banco inicializar (cerca de 5-10 segundos)
+sleep 10
+
+# 3. Executar as migrations
+./run-migrations.sh
+
+# 4. Ver logs da API
 docker logs api_obras -f
 
-# Ver logs do banco
+# 5. Ver logs do banco
 docker logs db_obras -f
 
 # Parar os serviços
 docker compose down
 
 # Reconstruir e iniciar (após mudanças no código)
+docker compose down
 docker compose up -d --build
+./run-migrations.sh
+```
+
+### Fluxo Completo de Inicialização
+
+```bash
+# Passo 1: Subir os containers
+docker compose up -d
+
+# Passo 2: Executar migrations (script pronto)
+chmod +x run-migrations.sh
+./run-migrations.sh
+
+# Passo 3: Verificar se a API está rodando
+docker logs api_obras
+
+# Passo 4: Testar a API
+curl http://localhost:9090/pessoas
 ```
 
 ### Usando Make
@@ -185,7 +232,27 @@ Ou usando uma ferramenta GUI com as seguintes credenciais:
 
 Base URL: `http://localhost:9090`
 
-### 👥 Pessoas
+### � Índice de Endpoints
+
+- [👥 Pessoas](#-pessoas) - Gerenciamento de pessoas (contratantes, profissionais)
+- [👤 Usuários](#-usuários) - Gerenciamento de usuários do sistema
+- [🏗️ Obras](#️-obras) - Gerenciamento de obras e contratos
+- [📖 Diários de Obra](#-diários-de-obra) - Registro diário de atividades
+
+### 🔑 Códigos de Status HTTP
+
+| Código | Descrição |
+|--------|-----------|
+| `200 OK` | Requisição bem-sucedida |
+| `201 Created` | Recurso criado com sucesso |
+| `204 No Content` | Requisição bem-sucedida sem conteúdo (DELETE) |
+| `400 Bad Request` | Dados inválidos ou malformados |
+| `404 Not Found` | Recurso não encontrado |
+| `500 Internal Server Error` | Erro interno do servidor |
+
+---
+
+### �👥 Pessoas
 
 #### Listar todas as pessoas
 ```http
@@ -314,6 +381,33 @@ PUT /pessoas/:id
   "ativo": true,
   "createdAt": "2025-10-16T11:00:00Z",
   "updatedAt": "2025-10-16T12:00:00Z"
+}
+```
+
+#### Deletar pessoa
+```http
+DELETE /pessoas/:id
+```
+
+**Parâmetros:**
+- `id` (path): ID da pessoa
+
+**Resposta (204 No Content):**
+```
+(sem corpo de resposta)
+```
+
+**Resposta de Erro (404 Not Found):**
+```json
+{
+  "error": "Pessoa não encontrada"
+}
+```
+
+**Resposta de Erro (400 Bad Request):**
+```json
+{
+  "error": "ID deve ser um número válido"
 }
 ```
 
@@ -652,6 +746,33 @@ PUT /obras/:id
 }
 ```
 
+#### Deletar obra
+```http
+DELETE /obras/:id
+```
+
+**Parâmetros:**
+- `id` (path): ID da obra
+
+**Resposta (204 No Content):**
+```
+(sem corpo de resposta)
+```
+
+**Resposta de Erro (404 Not Found):**
+```json
+{
+  "error": "Obra não encontrada"
+}
+```
+
+**Resposta de Erro (400 Bad Request):**
+```json
+{
+  "error": "ID deve ser um número válido"
+}
+```
+
 ---
 
 ### 📖 Diários de Obra
@@ -834,6 +955,33 @@ PUT /diarios/:id
 }
 ```
 
+#### Deletar diário
+```http
+DELETE /diarios/:id
+```
+
+**Parâmetros:**
+- `id` (path): ID do diário
+
+**Resposta (204 No Content):**
+```
+(sem corpo de resposta)
+```
+
+**Resposta de Erro (404 Not Found):**
+```json
+{
+  "error": "Diário não encontrado"
+}
+```
+
+**Resposta de Erro (400 Bad Request):**
+```json
+{
+  "error": "ID deve ser um número válido"
+}
+```
+
 ---
 
 ## 📂 Estrutura do Projeto
@@ -893,15 +1041,174 @@ OBRA/
 
 O projeto usa migrations para versionamento do banco de dados.
 
-### Executar Migrations Manualmente
+### Como Executar as Migrations
+
+#### Opção 1: Usando golang-migrate (Recomendado)
+
+**1. Instalar o golang-migrate:**
 
 ```bash
-# Conectar ao container do banco
+# No Linux
+curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
+sudo mv migrate /usr/local/bin/migrate
+
+# No macOS
+brew install golang-migrate
+
+# Ou usando Go
+go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+```
+
+**2. Executar as migrations:**
+
+```bash
+# Aplicar todas as migrations (UP)
+migrate -path ./migrations -database "postgresql://obras:7894@localhost:5440/obrasdb?sslmode=disable" up
+
+# Reverter última migration (DOWN)
+migrate -path ./migrations -database "postgresql://obras:7894@localhost:5440/obrasdb?sslmode=disable" down 1
+
+# Ver status das migrations
+migrate -path ./migrations -database "postgresql://obras:7894@localhost:5440/obrasdb?sslmode=disable" version
+
+# Forçar versão específica (use com cuidado)
+migrate -path ./migrations -database "postgresql://obras:7894@localhost:5440/obrasdb?sslmode=disable" force 5
+```
+
+#### Opção 2: Executar SQL Diretamente no Container
+
+**1. Conectar ao container do PostgreSQL:**
+
+```bash
+docker exec -it db_obras psql -U obras -d obrasdb
+```
+
+**2. Executar os arquivos SQL manualmente:**
+
+```bash
+# Aplicar migration de pessoas
+docker exec -i db_obras psql -U obras -d obrasdb < migrations/000001_create_pessoa.up.sql
+
+# Aplicar migration de usuários
+docker exec -i db_obras psql -U obras -d obrasdb < migrations/000002_create_usuario.up.sql
+
+# Aplicar migration de obras
+docker exec -i db_obras psql -U obras -d obrasdb < migrations/000003_create_obra.up.sql
+
+# Aplicar migration de diários
+docker exec -i db_obras psql -U obras -d obrasdb < migrations/000004_create_diario.up.sql
+
+# Aplicar dados de teste (seed)
+docker exec -i db_obras psql -U obras -d obrasdb < migrations/000005_seed_data.up.sql
+```
+
+**3. Aplicar todas de uma vez:**
+
+```bash
+# Aplicar todas as migrations em ordem
+for file in migrations/*.up.sql; do
+  echo "Aplicando: $file"
+  docker exec -i db_obras psql -U obras -d obrasdb < "$file"
+done
+```
+
+#### Opção 3: Usando Makefile
+
+O projeto já possui um Makefile com comandos prontos:
+
+```bash
+# Ver todos os comandos disponíveis
+make help
+
+# Instalar golang-migrate
+make install-migrate
+
+# Subir apenas o banco de dados
+make docker-up
+
+# Executar migrations (requer golang-migrate instalado)
+make migrate-up
+
+# Reverter última migration
+make migrate-down
+
+# Criar nova migration
+make migrate-create NAME=create_nova_tabela
+
+# Rodar a API localmente (sem Docker)
+make run
+```
+
+#### Opção 4: Script Shell Personalizado
+
+Crie um arquivo `run-migrations.sh`:
+
+```bash
+#!/bin/bash
+
+echo "🚀 Iniciando migrations..."
+
+DB_HOST="localhost"
+DB_PORT="5440"
+DB_USER="obras"
+DB_PASSWORD="7894"
+DB_NAME="obrasdb"
+
+export PGPASSWORD=$DB_PASSWORD
+
+# Verificar se o banco está acessível
+echo "📡 Verificando conexão com o banco..."
+until psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c '\q' 2>/dev/null; do
+  echo "⏳ Aguardando banco de dados..."
+  sleep 2
+done
+
+echo "✅ Banco de dados conectado!"
+
+# Aplicar migrations
+echo "📦 Aplicando migrations..."
+
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -f migrations/000001_create_pessoa.up.sql
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -f migrations/000002_create_usuario.up.sql
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -f migrations/000003_create_obra.up.sql
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -f migrations/000004_create_diario.up.sql
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -f migrations/000005_seed_data.up.sql
+
+echo "✅ Migrations aplicadas com sucesso!"
+```
+
+Depois execute:
+
+```bash
+chmod +x run-migrations.sh
+./run-migrations.sh
+```
+
+### Verificar se as Migrations Foram Aplicadas
+
+```bash
+# Conectar ao banco
 docker exec -it db_obras psql -U obras -d obrasdb
 
-# Ou aplicar migrations via golang-migrate (se instalado)
-migrate -path ./migrations -database "postgresql://obras:7894@localhost:5440/obrasdb?sslmode=disable" up
+# Listar todas as tabelas
+\dt
+
+# Ver estrutura de uma tabela
+\d pessoas
+\d usuarios
+\d obras
+\d diarios_obra
+
+# Sair
+\q
 ```
+
+Você deve ver as seguintes tabelas:
+- `pessoas`
+- `usuarios`
+- `obras`
+- `diarios_obra`
+- `schema_migrations` (se usar golang-migrate)
 
 ### Estrutura das Tabelas
 
@@ -1019,16 +1326,65 @@ docker compose up -d
 
 ---
 
+## � Resumo de Rotas da API
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| **Pessoas** |
+| GET | `/pessoas` | Listar todas as pessoas |
+| GET | `/pessoas/:id` | Buscar pessoa por ID |
+| POST | `/pessoas` | Criar nova pessoa |
+| PUT | `/pessoas/:id` | Atualizar pessoa |
+| DELETE | `/pessoas/:id` | Deletar pessoa |
+| **Usuários** |
+| GET | `/usuarios` | Listar todos os usuários |
+| GET | `/usuarios/:id` | Buscar usuário por ID |
+| POST | `/usuarios` | Criar novo usuário |
+| PUT | `/usuarios/:id` | Atualizar usuário |
+| DELETE | `/usuarios/:id` | Deletar usuário |
+| **Obras** |
+| GET | `/obras` | Listar todas as obras |
+| GET | `/obras/:id` | Buscar obra por ID |
+| POST | `/obras` | Criar nova obra |
+| PUT | `/obras/:id` | Atualizar obra |
+| DELETE | `/obras/:id` | Deletar obra |
+| **Diários** |
+| GET | `/diarios` | Listar todos os diários |
+| GET | `/diarios/:id` | Buscar diário por ID |
+| GET | `/diarios/:id/obra` | Buscar diários por obra |
+| POST | `/diarios` | Criar novo diário |
+| PUT | `/diarios/:id` | Atualizar diário |
+| DELETE | `/diarios/:id` | Deletar diário |
+
+---
+
 ## 📝 Códigos de Status HTTP
 
-| Código | Descrição |
-|--------|-----------|
-| `200 OK` | Requisição bem-sucedida |
-| `201 Created` | Recurso criado com sucesso |
-| `204 No Content` | Requisição bem-sucedida sem conteúdo de retorno |
-| `400 Bad Request` | Dados inválidos ou malformados |
-| `404 Not Found` | Recurso não encontrado |
-| `500 Internal Server Error` | Erro interno do servidor |
+A API utiliza os seguintes códigos de status HTTP:
+
+| Código | Status | Uso |
+|--------|--------|-----|
+| `200` | OK | Requisição GET ou PUT bem-sucedida com retorno de dados |
+| `201` | Created | Recurso criado com sucesso (POST) |
+| `204` | No Content | Requisição bem-sucedida sem conteúdo de retorno (DELETE) |
+| `400` | Bad Request | Dados inválidos, malformados ou ID inválido |
+| `404` | Not Found | Recurso não encontrado |
+| `500` | Internal Server Error | Erro interno do servidor |
+
+### Formato de Resposta de Erro
+
+Erros retornam JSON no seguinte formato:
+
+```json
+{
+  "error": "Descrição do erro"
+}
+```
+
+**Exemplos:**
+- `404 Not Found`: `{"error": "Pessoa não encontrada"}`
+- `400 Bad Request`: `{"error": "ID deve ser um número válido"}`
+- `500 Internal Server Error`: `{"error": "Erro ao processar requisição"}`
 
 ---
 
@@ -1061,4 +1417,4 @@ Para reportar bugs ou solicitar features, abra uma [issue](https://github.com/Ma
 
 ---
 
-**Última atualização**: 16 de outubro de 2025
+**Última atualização**: 18 de outubro de 2025

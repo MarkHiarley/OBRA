@@ -1,2 +1,44 @@
+# Environment variables
 .env
+.env.local
+.env.*.local
 pkg/postgres/.env
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Build output
+/bin/
+/dist/
+/build/
+main
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+
+# Database
+*.db
+*.sqlite
+
+# Docker
+.dockerignore
+
+# Temporary files
+tmp/
+temp/
+*.tmp

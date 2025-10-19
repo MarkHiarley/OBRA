@@ -84,7 +84,7 @@ func (p *DiarioController) GetDiarioById(ctx *gin.Context) {
 	validNum := int64(idNumero)
 	usuario, err := p.DiarioUseCase.GetDiarioById(validNum)
 	if err != nil {
-		if err.Error() == "usuário não encontrado" {
+		if err.Error() == "diario não encontrado" {
 			ctx.JSON(http.StatusNotFound, gin.H{
 				"message": err.Error(),
 			})
@@ -214,4 +214,44 @@ func (p *DiarioController) PutDiarioById(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, diario)
+}
+func (p *DiarioController) DeleteDiariosById(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	if id == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "ID é obrigatório",
+		})
+		return
+	}
+
+	idNumero, err := strconv.Atoi(id)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "ID deve ser um número válido",
+		})
+		return
+	}
+
+	// ✅ CORRETO: Nome da variável é 'err', não 'diarios'
+	err = p.DiarioUseCase.DeleteDiariosById(idNumero)
+	if err != nil {
+		// ✅ CORRETO: Comparar a MENSAGEM do erro
+		if err.Error() == "Diario não encontrado" {
+			ctx.JSON(http.StatusNotFound, gin.H{
+				"error": "Diário não encontrado",
+			})
+			return
+		}
+
+		// ✅ Qualquer outro erro é interno
+		log.Printf("Erro ao deletar diário ID %d: %v", idNumero, err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Erro ao deletar diário",
+		})
+		return
+	}
+
+	// ✅ Sucesso - DELETE retorna 204 No Content
+	ctx.JSON(http.StatusNoContent, nil)
 }

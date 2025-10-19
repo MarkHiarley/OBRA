@@ -168,3 +168,24 @@ func (pr PessoaServices) PutPessoa(id int, pessoaToUpdate models.Pessoa) (models
 
 	return updatedPessoa, nil
 }
+
+func (pr *PessoaServices) DeletePessoaById(id int) error {
+	query := "DELETE FROM pessoa WHERE id = $1"
+
+	result, err := pr.connection.ExecContext(context.Background(), query, id)
+	if err != nil {
+
+		return fmt.Errorf("erro ao executar a query de delete")
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("erro ao obter linhas afetadas")
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("nenhuma pessoa encontrada com o ID fornecido")
+	}
+
+	return nil
+}

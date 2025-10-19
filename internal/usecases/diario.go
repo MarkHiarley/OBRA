@@ -42,7 +42,7 @@ func (pu *DiarioUseCase) GetDiarioById(id int64) (models.DiarioObra, error) {
 	diario, err := pu.services.GetDiarioById(id)
 
 	if err != nil {
-		return models.DiarioObra{}, fmt.Errorf("usuário não encontrado")
+		return models.DiarioObra{}, fmt.Errorf("diario não encontrado")
 
 	}
 
@@ -65,4 +65,23 @@ func (pu *DiarioUseCase) PutDiario(id int, updatedDiario models.DiarioObra) (mod
 	}
 
 	return updatedDiario, nil
+}
+
+func (pu *DiarioUseCase) DeleteDiariosById(id int) error {
+	err := pu.services.DeleteDiarioById(id)
+	if err != nil {
+		// ✅ CORRETO: Comparar a MENSAGEM do erro, não o objeto
+		switch err.Error() {
+		case "nenhum diario encontrado com o ID fornecido":
+			return fmt.Errorf("Diario não encontrado")
+		case "erro ao executar a query de delete":
+			return fmt.Errorf("erro ao executar operação de delete: %w", err)
+		case "erro ao obter linhas afetadas":
+			return fmt.Errorf("erro ao verificar resultado: %w", err)
+		default:
+			return err
+		}
+	}
+
+	return nil
 }

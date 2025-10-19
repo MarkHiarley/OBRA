@@ -169,3 +169,44 @@ func (p *pessoaController) PutPessoaById(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, usuario)
 }
+
+func (p *pessoaController) DeletePessoaById(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	if id == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "ID é obrigatório",
+		})
+		return
+	}
+
+	idNumero, err := strconv.Atoi(id)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "ID deve ser um número válido",
+		})
+		return
+	}
+
+	// ✅ CORRETO: Nome da variável é 'err', não 'pessoa'
+	err = p.pessoaUseCase.DeletePessoaById(idNumero)
+	if err != nil {
+		// ✅ CORRETO: Comparar a MENSAGEM do erro
+		if err.Error() == "Pessoa não encontrada" {
+			ctx.JSON(http.StatusNotFound, gin.H{
+				"error": "Pessoa não encontrada",
+			})
+			return
+		}
+
+		// ✅ Qualquer outro erro é interno
+		log.Printf("Erro ao deletar pessoa ID %d: %v", idNumero, err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Erro ao deletar pessoa",
+		})
+		return
+	}
+
+	// ✅ Sucesso - DELETE retorna 204 No Content
+	ctx.JSON(http.StatusNoContent, nil)
+}

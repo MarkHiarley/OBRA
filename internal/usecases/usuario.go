@@ -73,20 +73,19 @@ func (pu *UsuarioUseCase) PutUsuario(id int, UpdateUsuario models.Usuario) (mode
 }
 
 func (pu *UsuarioUseCase) DeleteUsuarioById(id int) error {
-
 	err := pu.services.DeleteUsuarioById(id)
 	if err != nil {
-
-		if err == fmt.Errorf("erro ao executar a query de delete") {
-			return fmt.Errorf("erro ao executar a query de delete")
+		// ✅ CORRETO: Comparar a MENSAGEM do erro, não o objeto
+		switch err.Error() {
+		case "nenhum usuário encontrado com o ID fornecido":
+			return ErrUserNotFound
+		case "erro ao executar a query de delete":
+			return fmt.Errorf("erro ao executar operação de delete: %w", err)
+		case "erro ao obter linhas afetadas":
+			return fmt.Errorf("erro ao verificar resultado: %w", err)
+		default:
+			return err
 		}
-		if err == fmt.Errorf("erro ao obter linhas afetadas") {
-			return fmt.Errorf("erro ao obter linhas afetadas")
-		}
-		if err == fmt.Errorf("nenhum usuário encontrado com o ID fornecido") {
-			return fmt.Errorf("nenhum usuário encontrado com o ID fornecido")
-		}
-		return err
 	}
 
 	return nil

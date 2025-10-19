@@ -4,6 +4,7 @@ import (
 	"codxis-obras/internal/models"
 	"codxis-obras/internal/services"
 	"database/sql"
+	"fmt"
 )
 
 type PessoaUseCase struct {
@@ -50,4 +51,23 @@ func (pu *PessoaUseCase) PutPessoa(id int, updatedPessoa models.Pessoa) (models.
 	}
 
 	return updatedPessoa, nil
+}
+
+func (pu *PessoaUseCase) DeletePessoaById(id int) error {
+	err := pu.services.DeletePessoaById(id)
+	if err != nil {
+		// ✅ CORRETO: Comparar a MENSAGEM do erro, não o objeto
+		switch err.Error() {
+		case "nenhuma pessoa encontrada com o ID fornecido":
+			return fmt.Errorf("Pessoa não encontrada")
+		case "erro ao executar a query de delete":
+			return fmt.Errorf("erro ao executar operação de delete: %w", err)
+		case "erro ao obter linhas afetadas":
+			return fmt.Errorf("erro ao verificar resultado: %w", err)
+		default:
+			return err
+		}
+	}
+
+	return nil
 }

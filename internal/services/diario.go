@@ -224,3 +224,24 @@ func (pr DiarioServices) PutDiarios(id int, diarioToUpdate models.DiarioObra) (m
 
 	return updatedDiario, nil
 }
+
+func (pr *DiarioServices) DeleteDiarioById(id int) error {
+	query := "DELETE FROM diario_obra WHERE id = $1"
+
+	result, err := pr.connection.ExecContext(context.Background(), query, id)
+	if err != nil {
+
+		return fmt.Errorf("erro ao executar a query de delete")
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("erro ao obter linhas afetadas")
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("nenhum diario encontrado com o ID fornecido")
+	}
+
+	return nil
+}

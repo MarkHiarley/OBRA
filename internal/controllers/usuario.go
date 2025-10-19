@@ -3,7 +3,6 @@ package controller
 import (
 	"codxis-obras/internal/models"
 	"codxis-obras/internal/usecases"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -174,44 +173,35 @@ func (p *usuarioController) DeleteUsuarioById(ctx *gin.Context) {
 
 	if id == "" {
 		ctx.JSON(http.StatusBadRequest, gin.H{
-			"message": "id não pode ser nulo",
+			"error": "ID é obrigatório",
 		})
 		return
 	}
 
 	idNumero, err := strconv.Atoi(id)
 	if err != nil {
-		message := models.Response{Messagem: "tem que ser número"}
-
 		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error":   err.Error(),
-			"message": message.Messagem,
+			"error": "ID deve ser um número válido",
 		})
 		return
 	}
 
-	usuario := p.usuarioUseCase.DeleteUsuarioById(idNumero)
-	if usuario != nil {
-		if usuario == fmt.Errorf("nenhum usuário encontrado com o ID fornecido") {
+	err = p.usuarioUseCase.DeleteUsuarioById(idNumero)
+	if err != nil {
+
+		if err.Error() == "usuário não encontrado" {
 			ctx.JSON(http.StatusNotFound, gin.H{
-				"message": usuario,
+				"error": "Usuário não encontrado",
 			})
 			return
 		}
 
-		if usuario == fmt.Errorf("erro ao executar a query de delete") {
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"message": usuario,
-			})
-		}
-
+		log.Printf("Erro ao deletar usuário ID %d: %v", idNumero, err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": usuario,
+			"error": "Erro ao deletar usuário",
 		})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"message": "deu bom man, foi deletado",
-	})
+	ctx.JSON(http.StatusNoContent, nil)
 }
