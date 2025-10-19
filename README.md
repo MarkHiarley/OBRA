@@ -244,7 +244,8 @@ Base URL: `http://localhost:9090`
 
 ### � Índice de Endpoints
 
-- [👥 Pessoas](#-pessoas) - Gerenciamento de pessoas (contratantes, profissionais)
+- [� Autenticação](#-autenticação) - Login e renovação de tokens JWT
+- [�👥 Pessoas](#-pessoas) - Gerenciamento de pessoas (contratantes, profissionais)
 - [👤 Usuários](#-usuários) - Gerenciamento de usuários do sistema
 - [🏗️ Obras](#️-obras) - Gerenciamento de obras e contratos
 - [📖 Diários de Obra](#-diários-de-obra) - Registro diário de atividades
@@ -259,6 +260,129 @@ Base URL: `http://localhost:9090`
 | `400 Bad Request` | Dados inválidos ou malformados |
 | `404 Not Found` | Recurso não encontrado |
 | `500 Internal Server Error` | Erro interno do servidor |
+
+---
+
+## 🔐 Autenticação
+
+A API utiliza **JWT (JSON Web Tokens)** para autenticação. Existem dois tipos de tokens:
+
+- **Access Token**: Válido por 15 minutos, usado em todas as requisições protegidas
+- **Refresh Token**: Válido por 7 dias, usado para renovar o access token
+
+### Fluxo de Autenticação
+
+```
+1. Login → Recebe access_token + refresh_token
+2. Usa access_token em requisições (header Authorization: Bearer <token>)
+3. Quando access_token expirar (401) → Usa refresh_token para renovar
+4. Recebe novos tokens → Continua usando a API
+```
+
+---
+
+### Login
+
+```http
+POST /login
+```
+
+**Body:**
+```json
+{
+  "email": "usuario@exemplo.com",
+  "senha": "senha123"
+}
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Resposta de Erro (401 Unauthorized):**
+```json
+{
+  "error": "credenciais inválidas"
+}
+```
+
+---
+
+### Renovar Token
+
+```http
+POST /refresh
+```
+
+**Body:**
+```json
+{
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Resposta de Erro (401 Unauthorized):**
+```json
+{
+  "error": "Refresh token inválido ou expirado"
+}
+```
+
+---
+
+### Como Usar os Tokens
+
+Todas as rotas protegidas requerem o access token no header `Authorization`:
+
+```bash
+curl -X GET http://localhost:9090/pessoas \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+**Exemplo de Fluxo Completo:**
+
+```bash
+# 1. Fazer login
+curl -X POST http://localhost:9090/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "user@email.com", "senha": "senha123"}'
+
+# Resposta: { "access_token": "...", "refresh_token": "..." }
+
+# 2. Usar o access_token nas requisições
+curl -X GET http://localhost:9090/pessoas \
+  -H "Authorization: Bearer <access_token>"
+
+# 3. Quando o access_token expirar (após 15 min), renovar:
+curl -X POST http://localhost:9090/refresh \
+  -H "Content-Type: application/json" \
+  -d '{"refresh_token": "<refresh_token>"}'
+
+# 4. Usar o novo access_token
+curl -X GET http://localhost:9090/pessoas \
+  -H "Authorization: Bearer <novo_access_token>"
+```
+
+---
+
+### Rotas Públicas vs Protegidas
+
+| Tipo | Rotas | Autenticação |
+|------|-------|--------------|
+| **Públicas** | `POST /login`, `POST /usuarios`, `POST /refresh` | ❌ Não requer token |
+| **Protegidas** | Todas as outras rotas (GET, PUT, DELETE) | ✅ Requer access token |
 
 ---
 
@@ -424,6 +548,52 @@ DELETE /pessoas/:id
 ---
 
 ### 👤 Usuários
+
+> 📌 **Nota de Autenticação:**  
+> - `POST /usuarios` (cadastro) é **público** - não requer token
+> - Todas as outras operações (GET, PUT, DELETE) são **protegidas** - requerem token JWT
+
+#### Cadastrar novo usuário
+
+```http
+POST /usuarios
+```
+
+**Autenticação:** ❌ Pública (não requer token)
+
+**Body:**
+```json
+{
+  "email": "novo@obra.com",
+  "nome": "Novo Usuário",
+  "senha": "senha123",
+  "tipo_documento": "CPF",
+  "documento": "123.456.789-00",
+  "telefone": "(11) 98765-4321",
+  "perfil_acesso": "usuario",
+  "ativo": true
+}
+```
+
+**Resposta (201 Created):**
+```json
+{
+  "id": 1,
+  "email": "novo@obra.com",
+  "nome": "Novo Usuário",
+  "tipo_documento": "CPF",
+  "documento": "123.456.789-00",
+  "telefone": "(11) 98765-4321",
+  "perfil_acesso": "usuario",
+  "ativo": true,
+  "createdAt": "2025-10-19T10:00:00Z",
+  "updatedAt": "2025-10-19T10:00:00Z"
+}
+```
+
+> 💡 **Dica:** Após cadastrar, use `POST /login` com o email e senha para obter os tokens JWT.
+
+---
 
 #### Listar todos os usuários
 ```http
@@ -1001,24 +1171,32 @@ OBRA/
 ├── cmd/
 │   └── main.go                    # Ponto de entrada da aplicação
 ├── internal/
+│   ├── auth/                      # 🔐 Autenticação e Autorização (NOVO)
+│   │   ├── jwt.go                 # Geração e validação de tokens JWT
+│   │   └── middleware.go          # Middleware de autenticação
 │   ├── controllers/               # Handlers HTTP (Gin)
 │   │   ├── diario.go
+│   │   ├── login.go               # 🆕 Controller de login
 │   │   ├── obras.go
 │   │   ├── pessoa.go
 │   │   └── usuario.go
 │   ├── models/                    # Estruturas de dados
+│   │   ├── Claims.go              # 🆕 JWT Claims
 │   │   ├── diario.go
+│   │   ├── login.go               # 🆕 Model de login
 │   │   ├── obra.go
 │   │   ├── pessoa.go
 │   │   ├── response.go
 │   │   └── usuario.go
 │   ├── services/                  # Camada de acesso a dados
 │   │   ├── diario.go
+│   │   ├── login.go               # 🆕 Service de autenticação
 │   │   ├── obra.go
 │   │   ├── pessoa.go
 │   │   └── usuario.go
 │   └── usecases/                  # Lógica de negócio
 │       ├── diario.go
+│       ├── login.go               # 🆕 UseCase de login
 │       ├── obra.go
 │       ├── pessoa.go
 │       └── usuario.go
@@ -1036,13 +1214,55 @@ OBRA/
 ├── pkg/
 │   └── postgres/                  # Configuração do banco
 │       └── postgres.go
-├── .env                           # Variáveis de ambiente
+├── .env                           # Variáveis de ambiente (SECRET_KEY_JWT)
+├── .env.example                   # 🆕 Exemplo de variáveis de ambiente
 ├── docker-compose.yml             # Orquestração de containers
 ├── Dockerfile                     # Imagem da aplicação
 ├── go.mod                         # Dependências Go
 ├── go.sum                         # Checksums das dependências
 ├── Makefile                       # Comandos facilitados
 └── README.md                      # Esta documentação
+```
+
+### 🔐 Novos Componentes de Autenticação
+
+| Arquivo | Responsabilidade |
+|---------|------------------|
+| `internal/auth/jwt.go` | Geração de access_token e refresh_token, validação de tokens JWT |
+| `internal/auth/middleware.go` | Middleware que protege rotas, valida tokens e injeta claims no contexto |
+| `internal/controllers/login.go` | Handler HTTP para `/login` e `/refresh` |
+| `internal/usecases/login.go` | Lógica de validação de credenciais e geração de tokens |
+| `internal/services/login.go` | Busca usuário no banco de dados por email |
+| `internal/models/login.go` | Estrutura de request de login (email + senha) |
+| `internal/models/Claims.go` | Estrutura de claims JWT (email, expiração, etc.) |
+| `.env.example` | Template de variáveis de ambiente |
+
+### 📊 Fluxo de Autenticação
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   Fluxo de Autenticação                     │
+└─────────────────────────────────────────────────────────────┘
+
+1. POST /login
+   ├─> LoginController.CreateLogin
+   ├─> LoginUseCase.LoginUseCase
+   │   ├─> LoginService.CheckUser (busca hash no banco)
+   │   ├─> bcrypt.CompareHashAndPassword (valida senha)
+   │   └─> auth.GenerateAccessToken + auth.GenerateRefreshToken
+   └─> Retorna: { access_token, refresh_token }
+
+2. POST /refresh
+   ├─> LoginController.RefreshToken
+   ├─> auth.ValidateToken (valida refresh_token)
+   └─> Retorna: { novo_access_token, novo_refresh_token }
+
+3. Rotas Protegidas
+   ├─> auth.AuthMiddleware (intercepta requisição)
+   ├─> Extrai token do header Authorization
+   ├─> auth.ValidateToken (valida access_token)
+   ├─> Injeta email no contexto (ctx.Set)
+   └─> Chama handler da rota
 ```
 
 ---
@@ -1338,33 +1558,36 @@ docker compose up -d
 
 ## � Resumo de Rotas da API
 
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| **Pessoas** |
-| GET | `/pessoas` | Listar todas as pessoas |
-| GET | `/pessoas/:id` | Buscar pessoa por ID |
-| POST | `/pessoas` | Criar nova pessoa |
-| PUT | `/pessoas/:id` | Atualizar pessoa |
-| DELETE | `/pessoas/:id` | Deletar pessoa |
+| Método | Endpoint | Autenticação | Descrição |
+|--------|----------|--------------|-----------|
+| **Autenticação** |
+| POST | `/login` | ❌ Pública | Login e geração de tokens JWT |
+| POST | `/refresh` | ❌ Pública | Renovar access token |
 | **Usuários** |
-| GET | `/usuarios` | Listar todos os usuários |
-| GET | `/usuarios/:id` | Buscar usuário por ID |
-| POST | `/usuarios` | Criar novo usuário |
-| PUT | `/usuarios/:id` | Atualizar usuário |
-| DELETE | `/usuarios/:id` | Deletar usuário |
+| POST | `/usuarios` | ❌ Pública | Criar novo usuário (cadastro) |
+| GET | `/usuarios` | ✅ Protegida | Listar todos os usuários |
+| GET | `/usuarios/:id` | ✅ Protegida | Buscar usuário por ID |
+| PUT | `/usuarios/:id` | ✅ Protegida | Atualizar usuário |
+| DELETE | `/usuarios/:id` | ✅ Protegida | Deletar usuário |
+| **Pessoas** |
+| GET | `/pessoas` | ✅ Protegida | Listar todas as pessoas |
+| GET | `/pessoas/:id` | ✅ Protegida | Buscar pessoa por ID |
+| POST | `/pessoas` | ✅ Protegida | Criar nova pessoa |
+| PUT | `/pessoas/:id` | ✅ Protegida | Atualizar pessoa |
+| DELETE | `/pessoas/:id` | ✅ Protegida | Deletar pessoa |
 | **Obras** |
-| GET | `/obras` | Listar todas as obras |
-| GET | `/obras/:id` | Buscar obra por ID |
-| POST | `/obras` | Criar nova obra |
-| PUT | `/obras/:id` | Atualizar obra |
-| DELETE | `/obras/:id` | Deletar obra |
+| GET | `/obras` | ✅ Protegida | Listar todas as obras |
+| GET | `/obras/:id` | ✅ Protegida | Buscar obra por ID |
+| POST | `/obras` | ✅ Protegida | Criar nova obra |
+| PUT | `/obras/:id` | ✅ Protegida | Atualizar obra |
+| DELETE | `/obras/:id` | ✅ Protegida | Deletar obra |
 | **Diários** |
-| GET | `/diarios` | Listar todos os diários |
-| GET | `/diarios/:id` | Buscar diário por ID |
-| GET | `/diarios/:id/obra` | Buscar diários por obra |
-| POST | `/diarios` | Criar novo diário |
-| PUT | `/diarios/:id` | Atualizar diário |
-| DELETE | `/diarios/:id` | Deletar diário |
+| GET | `/diarios` | ✅ Protegida | Listar todos os diários |
+| GET | `/diarios/:id` | ✅ Protegida | Buscar diário por ID |
+| GET | `/diarios/obra/:id` | ✅ Protegida | Buscar diários por obra |
+| POST | `/diarios` | ✅ Protegida | Criar novo diário |
+| PUT | `/diarios/:id` | ✅ Protegida | Atualizar diário |
+| DELETE | `/diarios/:id` | ✅ Protegida | Deletar diário |
 
 ---
 
@@ -1398,7 +1621,97 @@ Erros retornam JSON no seguinte formato:
 
 ---
 
-## 🤝 Contribuindo
+## � Exemplos de Uso Completo
+
+### Fluxo Completo: Do Cadastro ao Acesso Protegido
+
+```bash
+# 1. Cadastrar novo usuário (PÚBLICO - sem token)
+curl -X POST http://localhost:9090/usuarios \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "joao@obra.com",
+    "nome": "João Silva",
+    "senha": "senha123",
+    "tipo_documento": "CPF",
+    "documento": "123.456.789-00",
+    "telefone": "(11) 98765-4321",
+    "perfil_acesso": "usuario",
+    "ativo": true
+  }'
+
+# Resposta: {"id": 1, "email": "joao@obra.com", ...}
+
+# 2. Fazer login para obter tokens
+curl -X POST http://localhost:9090/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "joao@obra.com",
+    "senha": "senha123"
+  }'
+
+# Resposta:
+# {
+#   "access_token": "eyJhbGc...",
+#   "refresh_token": "eyJhbGc..."
+# }
+
+# 3. Usar o access_token para criar uma pessoa (PROTEGIDO)
+curl -X POST http://localhost:9090/pessoas \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGc..." \
+  -d '{
+    "nome": "Maria Santos",
+    "tipo": "CPF",
+    "documento": "987.654.321-00",
+    "email": "maria@exemplo.com",
+    "telefone": "(11) 91234-5678",
+    "cargo": "Arquiteta",
+    "ativo": true
+  }'
+
+# 4. Listar pessoas (PROTEGIDO)
+curl -X GET http://localhost:9090/pessoas \
+  -H "Authorization: Bearer eyJhbGc..."
+
+# 5. Se o access_token expirar (após 15 min), renovar:
+curl -X POST http://localhost:9090/refresh \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refresh_token": "eyJhbGc..."
+  }'
+
+# Resposta: novos tokens
+# {
+#   "access_token": "eyJhbGc...",
+#   "refresh_token": "eyJhbGc..."
+# }
+
+# 6. Continuar usando a API com o novo access_token
+curl -X GET http://localhost:9090/obras \
+  -H "Authorization: Bearer <novo_access_token>"
+```
+
+### Testando Sem Autenticação (Deve Falhar)
+
+```bash
+# Tentar acessar rota protegida sem token
+curl -X GET http://localhost:9090/pessoas
+
+# Resposta: 401 Unauthorized
+# {"error": "Token não fornecido"}
+
+# Tentar acessar com token inválido
+curl -X GET http://localhost:9090/pessoas \
+  -H "Authorization: Bearer token_invalido"
+
+# Resposta: 401 Unauthorized
+# {"error": "Token inválido ou expirado"}
+```
+
+---
+
+## �🤝 Contribuindo
 
 1. Fork o projeto
 2. Crie uma branch para sua feature (`git checkout -b feature/MinhaFeature`)
@@ -1427,4 +1740,4 @@ Para reportar bugs ou solicitar features, abra uma [issue](https://github.com/Ma
 
 ---
 
-**Última atualização**: 18 de outubro de 2025
+**Última atualização**: 19 de outubro de 2025

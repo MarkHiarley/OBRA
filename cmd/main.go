@@ -1,6 +1,7 @@
 package main
 
 import (
+	"codxis-obras/internal/auth"
 	controller "codxis-obras/internal/controllers"
 	"codxis-obras/internal/services"
 	"codxis-obras/internal/usecases"
@@ -13,19 +14,15 @@ import (
 )
 
 func main() {
-	server := gin.Default()
+
 	err := godotenv.Load()
 	if err != nil {
-
 		log.Println("Warning: Could not find or load .env file. Using system environment variables.")
 	}
-
-	// api := "/v1"
 
 	dbconnection, err := postgres.ConnectDB()
 	if err != nil {
 		panic(err)
-
 	}
 
 	obraService := services.NewObraService(dbconnection)
@@ -44,38 +41,58 @@ func main() {
 	diarioUseCase := usecases.NewDiarioUsecase(diarioService)
 	diarioController := controller.NewDiarioController(diarioUseCase)
 
-	//posts
-	server.POST("/pessoas", pessoaController.CreatePessoa)
+	loginService := services.NewLoginService(dbconnection)
+	loginUseCase := usecases.NewLoginUsecase(loginService)
+	loginController := controller.NewLoginController(loginUseCase)
+
+	server := gin.Default()
+
+	server.POST("/login", loginController.CreateLogin)
+	server.POST("/refresh", loginController.RefreshToken)
 	server.POST("/usuarios", usuarioController.CreateUsuario)
-	server.POST("/obras", obraController.CreateObra)
-	server.POST("/diarios", diarioController.CreateDiario)
 
-	//gest
-	server.GET("/usuarios", usuarioController.GetUsuarios)
-	server.GET("/pessoas", pessoaController.GetPessoas)
-	server.GET("/obras", obraController.GetObras)
-	server.GET("/diarios", diarioController.GetDiarios)
+	protected := server.Group("/")
+	protected.Use(auth.AuthMiddleware())
+	{
+		// CREATE (POST)
+		protected.POST("/pessoas", pessoaController.CreatePessoa)
 
-	server.GET("/usuarios/:id", usuarioController.GetUsuarioById)
-	server.GET("/pessoas/:id", pessoaController.GetPessoaById)
-	server.GET("/obras/:id", obraController.GetObraById)
-	server.GET("/diarios/:id", diarioController.GetDiarioById)
-	server.GET("/diarios/:id/obra", diarioController.GetDiariosByObraId)
+		protected.POST("/obras", obraController.CreateObra)
+		protected.POST("/diarios", diarioController.CreateDiario)
 
-	//patch
+		// READ (GET)
+		protected.GET("/usuarios", usuarioController.GetUsuarios)
+		protected.GET("/usuarios/:id", usuarioController.GetUsuarioById)
 
-	server.PUT("/usuarios/:id", usuarioController.PutUsuarioById)
-	server.PUT("/pessoas/:id", pessoaController.PutPessoaById)
-	server.PUT("/obras/:id", obraController.PutObraById)
-	server.PUT("/diarios/:id", diarioController.PutDiarioById)
+		protected.GET("/pessoas", pessoaController.GetPessoas)
+		protected.GET("/pessoas/:id", pessoaController.GetPessoaById)
 
-	//delete
+		protected.GET("/obras", obraController.GetObras)
+		protected.GET("/obras/:id", obraController.GetObraById)
 
-	server.DELETE("/usuarios/:id", usuarioController.DeleteUsuarioById)
-	server.DELETE("/pessoas/:id", pessoaController.DeletePessoaById)
-	server.DELETE("/obras/:id", obraController.DeleteObraById)
-	server.DELETE("/diarios/:id", diarioController.DeleteDiariosById)
+		protected.GET("/diarios", diarioController.GetDiarios)
+		protected.GET("/diarios/:id", diarioController.GetDiarioById)
+		protected.GET("/diarios/obra/:id", diarioController.GetDiariosByObraId)
 
+		// UPDATE (PUT)
+		protected.PUT("/usuarios/:id", usuarioController.PutUsuarioById)
+		protected.PUT("/pessoas/:id", pessoaController.PutPessoaById)
+		protected.PUT("/obras/:id", obraController.PutObraById)
+		protected.PUT("/diarios/:id", diarioController.PutDiarioById)
+
+		// DELETE
+		protected.DELETE("/usuarios/:id", usuarioController.DeleteUsuarioById)
+		protected.DELETE("/pessoas/:id", pessoaController.DeletePessoaById)
+		protected.DELETE("/obras/:id", obraController.DeleteObraById)
+		protected.DELETE("/diarios/:id", diarioController.DeleteDiariosById)
+	}
+
+	// ✅ Inicia servidor
 	port := os.Getenv("API_PORT")
+	if port == "" {
+		port = "9090" // Porta padrão
+	}
+
+	log.Printf("Servidor iniciado na porta %s", port)
 	server.Run(":" + port)
 }
