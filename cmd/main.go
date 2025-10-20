@@ -54,7 +54,7 @@ func main() {
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: false, // Deve ser false quando AllowOrigins é "*"
+		AllowCredentials: false,     // Deve ser false quando AllowOrigins é "*"
 		MaxAge:           12 * 3600, // Cache de 12 horas
 	}))
 
