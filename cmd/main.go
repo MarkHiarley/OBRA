@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -46,6 +47,16 @@ func main() {
 	loginController := controller.NewLoginController(loginUseCase)
 
 	server := gin.Default()
+
+	// ✅ Configurar CORS para permitir todas as origens
+	server.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"}, // Permite todas as origens
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: false, // Deve ser false quando AllowOrigins é "*"
+		MaxAge:           12 * 3600, // Cache de 12 horas
+	}))
 
 	server.POST("/login", loginController.CreateLogin)
 	server.POST("/refresh", loginController.RefreshToken)
