@@ -1,0 +1,2 @@
+-- Rollback da limpeza de constraints (complexo - geralmente não fazemos rollback de limpezas)
+-- Em caso de necessidade, recriar manualmente as FKs duplicadas

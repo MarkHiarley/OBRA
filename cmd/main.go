@@ -42,6 +42,14 @@ func main() {
 	diarioUseCase := usecases.NewDiarioUsecase(diarioService)
 	diarioController := controller.NewDiarioController(diarioUseCase)
 
+	fornecedorService := services.NewFornecedorService(dbconnection)
+	fornecedorUseCase := usecases.NewFornecedorUsecase(fornecedorService)
+	fornecedorController := controller.NewFornecedorController(fornecedorUseCase)
+
+	despesaService := services.NewDespesaService(dbconnection)
+	despesaUseCase := usecases.NewDespesaUsecase(despesaService)
+	despesaController := controller.NewDespesaController(despesaUseCase)
+
 	loginService := services.NewLoginService(dbconnection)
 	loginUseCase := usecases.NewLoginUsecase(loginService)
 	loginController := controller.NewLoginController(loginUseCase)
@@ -67,9 +75,10 @@ func main() {
 	{
 		// CREATE (POST)
 		protected.POST("/pessoas", pessoaController.CreatePessoa)
-
 		protected.POST("/obras", obraController.CreateObra)
 		protected.POST("/diarios", diarioController.CreateDiario)
+		protected.POST("/fornecedores", fornecedorController.CreateFornecedor)
+		protected.POST("/despesas", despesaController.CreateDespesa)
 
 		// READ (GET)
 		protected.GET("/usuarios", usuarioController.GetUsuarios)
@@ -85,17 +94,28 @@ func main() {
 		protected.GET("/diarios/:id", diarioController.GetDiarioById)
 		protected.GET("/diarios/obra/:id", diarioController.GetDiariosByObraId)
 
+		protected.GET("/fornecedores", fornecedorController.GetFornecedores)
+		protected.GET("/fornecedores/:id", fornecedorController.GetFornecedorById)
+
+		protected.GET("/despesas", despesaController.GetDespesas)
+		protected.GET("/despesas/:id", despesaController.GetDespesaById)
+		protected.GET("/despesas/relatorio/:obra_id", despesaController.GetRelatorioPorObra)
+
 		// UPDATE (PUT)
 		protected.PUT("/usuarios/:id", usuarioController.PutUsuarioById)
 		protected.PUT("/pessoas/:id", pessoaController.PutPessoaById)
 		protected.PUT("/obras/:id", obraController.PutObraById)
 		protected.PUT("/diarios/:id", diarioController.PutDiarioById)
+		protected.PUT("/fornecedores/:id", fornecedorController.PutFornecedorById)
+		protected.PUT("/despesas/:id", despesaController.PutDespesaById)
 
 		// DELETE
 		protected.DELETE("/usuarios/:id", usuarioController.DeleteUsuarioById)
 		protected.DELETE("/pessoas/:id", pessoaController.DeletePessoaById)
 		protected.DELETE("/obras/:id", obraController.DeleteObraById)
 		protected.DELETE("/diarios/:id", diarioController.DeleteDiariosById)
+		protected.DELETE("/fornecedores/:id", fornecedorController.DeleteFornecedorById)
+		protected.DELETE("/despesas/:id", despesaController.DeleteDespesaById)
 	}
 
 	// ✅ Inicia servidor
