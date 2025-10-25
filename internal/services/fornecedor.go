@@ -49,7 +49,7 @@ func (fs *FornecedorServices) GetFornecedores() ([]models.Fornecedor, error) {
 	query := `SELECT id, nome, tipo_documento, documento, email, telefone, endereco, cidade, estado, ativo, created_at, updated_at 
 	          FROM fornecedor 
 	          ORDER BY nome`
-	
+
 	rows, err := fs.connection.Query(query)
 	if err != nil {
 		fmt.Println(err)
@@ -137,7 +137,7 @@ func (fs *FornecedorServices) PutFornecedor(id int, fornecedorToUpdate models.Fo
 			updated_at = $10
         WHERE id = $11
         RETURNING id, nome, tipo_documento, documento, email, telefone, endereco, cidade, estado, ativo, created_at, updated_at`
-	
+
 	var updatedFornecedor models.Fornecedor
 
 	err := fs.connection.QueryRowContext(context.Background(), query,
@@ -204,7 +204,7 @@ func (fs *FornecedorServices) GetFornecedoresAtivos() ([]models.Fornecedor, erro
 	          FROM fornecedor 
 	          WHERE ativo = true
 	          ORDER BY nome`
-	
+
 	rows, err := fs.connection.Query(query)
 	if err != nil {
 		fmt.Println(err)

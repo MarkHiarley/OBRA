@@ -60,7 +60,7 @@ func (ds *DespesaServices) GetDespesas() ([]models.DespesaComRelacionamentos, er
 		LEFT JOIN fornecedor f ON d.fornecedor_id = f.id
 		LEFT JOIN obra o ON d.obra_id = o.id
 		ORDER BY d.data_despesa DESC, d.created_at DESC`
-	
+
 	rows, err := ds.connection.Query(query)
 	if err != nil {
 		fmt.Println(err)
@@ -163,7 +163,7 @@ func (ds *DespesaServices) GetDespesasByObraId(obraId int64) ([]models.DespesaCo
 		LEFT JOIN obra o ON d.obra_id = o.id
 		WHERE d.obra_id = $1
 		ORDER BY d.data_despesa DESC`
-	
+
 	rows, err := ds.connection.Query(query, obraId)
 	if err != nil {
 		fmt.Println(err)
@@ -219,7 +219,7 @@ func (ds *DespesaServices) GetDespesasByFornecedorId(fornecedorId int64) ([]mode
 		LEFT JOIN obra o ON d.obra_id = o.id
 		WHERE d.fornecedor_id = $1
 		ORDER BY d.data_despesa DESC`
-	
+
 	rows, err := ds.connection.Query(query, fornecedorId)
 	if err != nil {
 		fmt.Println(err)
@@ -274,7 +274,7 @@ func (ds *DespesaServices) GetRelatorioPorObra(obraId int64) ([]models.Relatorio
 		WHERE d.obra_id = $1
 		GROUP BY d.obra_id, o.nome, d.categoria
 		ORDER BY total_despesas DESC`
-	
+
 	rows, err := ds.connection.Query(query, obraId)
 	if err != nil {
 		fmt.Println(err)
@@ -325,7 +325,7 @@ func (ds *DespesaServices) PutDespesa(id int, despesaToUpdate models.Despesa) (m
         RETURNING id, obra_id, fornecedor_id, data_despesa, descricao, categoria, valor, 
                   forma_pagamento, status_pagamento, data_pagamento, responsavel_pagamento, 
                   observacao, created_at, updated_at`
-	
+
 	var updatedDespesa models.Despesa
 
 	err := ds.connection.QueryRowContext(context.Background(), query,

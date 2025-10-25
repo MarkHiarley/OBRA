@@ -114,11 +114,11 @@ func (fu *FornecedorUseCase) validateFornecedor(fornecedor models.Fornecedor) er
 
 	// Validação básica de CPF (11 dígitos) ou CNPJ (14 dígitos)
 	documentoLimpo := strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(fornecedor.Documento.String, ".", ""), "-", ""), "/", "")
-	
+
 	if tipoDoc == "CPF" && len(documentoLimpo) != 11 {
 		return fmt.Errorf("CPF deve ter 11 dígitos")
 	}
-	
+
 	if tipoDoc == "CNPJ" && len(documentoLimpo) != 14 {
 		return fmt.Errorf("CNPJ deve ter 14 dígitos")
 	}
