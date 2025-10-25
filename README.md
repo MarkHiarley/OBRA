@@ -38,6 +38,8 @@ Pronto! A API está rodando em `http://localhost:9090` 🎉
   - [Usuários](#usuários)
   - [Obras](#obras)
   - [Diários de Obra](#diários-de-obra)
+  - [Fornecedores](#fornecedores)
+  - [Despesas](#despesas)
 - [Estrutura do Projeto](#estrutura-do-projeto)
 - [Migrations](#migrations)
 
@@ -51,6 +53,8 @@ O sistema OBRA é uma solução completa para gerenciamento de obras, permitindo
 - **Usuários**: Gestão de acesso ao sistema com perfis diferenciados
 - **Obras**: Controle completo de projetos, contratos e prazos
 - **Diários de Obra**: Registro diário de atividades, ocorrências e aprovações
+- **Fornecedores**: Cadastro de empresas e prestadores de serviços
+- **Despesas**: Controle financeiro de gastos por obra e categoria
 
 ---
 
@@ -249,6 +253,8 @@ Base URL: `http://localhost:9090`
 - [👤 Usuários](#-usuários) - Gerenciamento de usuários do sistema
 - [🏗️ Obras](#️-obras) - Gerenciamento de obras e contratos
 - [📖 Diários de Obra](#-diários-de-obra) - Registro diário de atividades
+- [🏪 Fornecedores](#-fornecedores) - Gerenciamento de fornecedores e prestadores
+- [💰 Despesas](#-despesas) - Controle financeiro e relatórios
 
 ### 🔑 Códigos de Status HTTP
 
@@ -1164,6 +1170,396 @@ DELETE /diarios/:id
 
 ---
 
+### 🏪 Fornecedores
+
+#### Listar todos os fornecedores
+```http
+GET /fornecedores
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "nome": "Materiais Silva LTDA",
+      "tipo_documento": "CNPJ",
+      "documento": "12.345.678/0001-90",
+      "email": "contato@materiaissilva.com.br",
+      "telefone": "(11) 98765-4321",
+      "endereco": "Av. das Construções, 1000",
+      "cidade": "São Paulo",
+      "estado": "SP",
+      "ativo": true,
+      "created_at": "2025-10-16T10:00:00Z",
+      "updated_at": "2025-10-16T10:00:00Z"
+    }
+  ]
+}
+```
+
+#### Buscar fornecedor por ID
+```http
+GET /fornecedores/:id
+```
+
+**Parâmetros:**
+- `id` (path): ID do fornecedor
+
+**Resposta (200 OK):**
+```json
+{
+  "id": 1,
+  "nome": "Materiais Silva LTDA",
+  "tipo_documento": "CNPJ",
+  "documento": "12.345.678/0001-90",
+  "email": "contato@materiaissilva.com.br",
+  "telefone": "(11) 98765-4321",
+  "endereco": "Av. das Construções, 1000",
+  "cidade": "São Paulo",
+  "estado": "SP",
+  "ativo": true,
+  "created_at": "2025-10-16T10:00:00Z",
+  "updated_at": "2025-10-16T10:00:00Z"
+}
+```
+
+#### Criar novo fornecedor
+```http
+POST /fornecedores
+```
+
+**Body:**
+```json
+{
+  "nome": "Ferragens Moderna",
+  "tipo_documento": "CNPJ",
+  "documento": "98.765.432/0001-10",
+  "email": "vendas@ferragensmoderna.com",
+  "telefone": "(11) 91234-5678",
+  "endereco": "Rua dos Materiais, 500",
+  "cidade": "São Paulo",
+  "estado": "SP",
+  "ativo": true
+}
+```
+
+**Resposta (201 Created):**
+```json
+{
+  "message": "Fornecedor criado com sucesso",
+  "data": {
+    "id": 2,
+    "nome": "Ferragens Moderna",
+    "tipo_documento": "CNPJ",
+    "documento": "98.765.432/0001-10",
+    "email": "vendas@ferragensmoderna.com",
+    "telefone": "(11) 91234-5678",
+    "endereco": "Rua dos Materiais, 500",
+    "cidade": "São Paulo",
+    "estado": "SP",
+    "ativo": true,
+    "created_at": "2025-10-16T11:00:00Z",
+    "updated_at": "2025-10-16T11:00:00Z"
+  }
+}
+```
+
+#### Atualizar fornecedor
+```http
+PUT /fornecedores/:id
+```
+
+**Parâmetros:**
+- `id` (path): ID do fornecedor
+
+**Body:**
+```json
+{
+  "nome": "Ferragens Moderna LTDA",
+  "tipo_documento": "CNPJ",
+  "documento": "98.765.432/0001-10",
+  "email": "comercial@ferragensmoderna.com",
+  "telefone": "(11) 91234-5678",
+  "endereco": "Rua dos Materiais, 500 - Sala 2",
+  "cidade": "São Paulo",
+  "estado": "SP",
+  "ativo": true
+}
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "id": 2,
+  "nome": "Ferragens Moderna LTDA",
+  "tipo_documento": "CNPJ",
+  "documento": "98.765.432/0001-10",
+  "email": "comercial@ferragensmoderna.com",
+  "telefone": "(11) 91234-5678",
+  "endereco": "Rua dos Materiais, 500 - Sala 2",
+  "cidade": "São Paulo",
+  "estado": "SP",
+  "ativo": true,
+  "created_at": "2025-10-16T11:00:00Z",
+  "updated_at": "2025-10-16T12:00:00Z"
+}
+```
+
+#### Deletar fornecedor
+```http
+DELETE /fornecedores/:id
+```
+
+**Parâmetros:**
+- `id` (path): ID do fornecedor
+
+**Resposta (204 No Content):**
+```
+(sem corpo de resposta)
+```
+
+**Resposta de Erro (404 Not Found):**
+```json
+{
+  "error": "Fornecedor não encontrado"
+}
+```
+
+---
+
+### 💰 Despesas
+
+#### Listar todas as despesas
+```http
+GET /despesas
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "obra_id": 1,
+      "fornecedor_id": 2,
+      "descricao": "Compra de cimento Portland",
+      "categoria": "MATERIAL",
+      "valor": 1500.00,
+      "data_vencimento": "2025-11-15",
+      "data_pagamento": null,
+      "forma_pagamento": "BOLETO",
+      "status_pagamento": "PENDENTE",
+      "observacoes": "Entrega prevista para 10/11",
+      "created_at": "2025-10-16T14:00:00Z",
+      "updated_at": "2025-10-16T14:00:00Z"
+    }
+  ]
+}
+```
+
+#### Buscar despesa por ID
+```http
+GET /despesas/:id
+```
+
+**Parâmetros:**
+- `id` (path): ID da despesa
+
+**Resposta (200 OK):**
+```json
+{
+  "id": 1,
+  "obra_id": 1,
+  "fornecedor_id": 2,
+  "descricao": "Compra de cimento Portland",
+  "categoria": "MATERIAL",
+  "valor": 1500.00,
+  "data_vencimento": "2025-11-15",
+  "data_pagamento": null,
+  "forma_pagamento": "BOLETO",
+  "status_pagamento": "PENDENTE",
+  "observacoes": "Entrega prevista para 10/11",
+  "created_at": "2025-10-16T14:00:00Z",
+  "updated_at": "2025-10-16T14:00:00Z"
+}
+```
+
+#### Criar nova despesa
+```http
+POST /despesas
+```
+
+**Body:**
+```json
+{
+  "obra_id": 1,
+  "fornecedor_id": 3,
+  "descricao": "Pagamento de pedreiros - semana 42",
+  "categoria": "MAO_DE_OBRA",
+  "valor": 2800.00,
+  "data_vencimento": "2025-10-25",
+  "forma_pagamento": "PIX",
+  "status_pagamento": "PENDENTE",
+  "observacoes": "Pagamento semanal da equipe"
+}
+```
+
+**Resposta (201 Created):**
+```json
+{
+  "message": "Despesa criada com sucesso",
+  "data": {
+    "id": 2,
+    "obra_id": 1,
+    "fornecedor_id": 3,
+    "descricao": "Pagamento de pedreiros - semana 42",
+    "categoria": "MAO_DE_OBRA",
+    "valor": 2800.00,
+    "data_vencimento": "2025-10-25",
+    "data_pagamento": null,
+    "forma_pagamento": "PIX",
+    "status_pagamento": "PENDENTE",
+    "observacoes": "Pagamento semanal da equipe",
+    "created_at": "2025-10-16T15:00:00Z",
+    "updated_at": "2025-10-16T15:00:00Z"
+  }
+}
+```
+
+#### Atualizar despesa
+```http
+PUT /despesas/:id
+```
+
+**Parâmetros:**
+- `id` (path): ID da despesa
+
+**Body:**
+```json
+{
+  "obra_id": 1,
+  "fornecedor_id": 3,
+  "descricao": "Pagamento de pedreiros - semana 42",
+  "categoria": "MAO_DE_OBRA",
+  "valor": 2800.00,
+  "data_vencimento": "2025-10-25",
+  "data_pagamento": "2025-10-24",
+  "forma_pagamento": "PIX",
+  "status_pagamento": "PAGO",
+  "observacoes": "Pagamento realizado via PIX"
+}
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "id": 2,
+  "obra_id": 1,
+  "fornecedor_id": 3,
+  "descricao": "Pagamento de pedreiros - semana 42",
+  "categoria": "MAO_DE_OBRA",
+  "valor": 2800.00,
+  "data_vencimento": "2025-10-25",
+  "data_pagamento": "2025-10-24",
+  "forma_pagamento": "PIX",
+  "status_pagamento": "PAGO",
+  "observacoes": "Pagamento realizado via PIX",
+  "created_at": "2025-10-16T15:00:00Z",
+  "updated_at": "2025-10-16T16:00:00Z"
+}
+```
+
+#### Deletar despesa
+```http
+DELETE /despesas/:id
+```
+
+**Parâmetros:**
+- `id` (path): ID da despesa
+
+**Resposta (204 No Content):**
+```
+(sem corpo de resposta)
+```
+
+#### Relatório de despesas por obra
+```http
+GET /despesas/relatorio/:obra_id
+```
+
+**Parâmetros:**
+- `obra_id` (path): ID da obra
+
+**Resposta (200 OK):**
+```json
+{
+  "obra_id": 1,
+  "totais_por_categoria": {
+    "MATERIAL": 15750.00,
+    "MAO_DE_OBRA": 8400.00,
+    "TRANSPORTE": 1200.00,
+    "EQUIPAMENTO": 3500.00
+  },
+  "total_geral": 28850.00,
+  "despesas": [
+    {
+      "id": 1,
+      "descricao": "Compra de cimento Portland",
+      "categoria": "MATERIAL",
+      "valor": 1500.00,
+      "fornecedor": "Materiais Silva LTDA",
+      "status_pagamento": "PENDENTE",
+      "data_vencimento": "2025-11-15"
+    },
+    {
+      "id": 2,
+      "descricao": "Pagamento de pedreiros - semana 42",
+      "categoria": "MAO_DE_OBRA",
+      "valor": 2800.00,
+      "fornecedor": "João Pedreiro",
+      "status_pagamento": "PAGO",
+      "data_pagamento": "2025-10-24"
+    }
+  ]
+}
+```
+
+#### Enums e Validações
+
+**Categorias de Despesa:**
+- `MATERIAL` - Materiais de construção
+- `MAO_DE_OBRA` - Mão de obra e serviços
+- `TRANSPORTE` - Fretes e transportes
+- `EQUIPAMENTO` - Aluguel de equipamentos
+- `ALIMENTACAO` - Alimentação da equipe
+- `OUTROS` - Outras despesas
+
+**Formas de Pagamento:**
+- `PIX` - Transferência PIX
+- `BOLETO` - Boleto bancário
+- `CARTAO_CREDITO` - Cartão de crédito
+- `CARTAO_DEBITO` - Cartão de débito
+- `TRANSFERENCIA` - Transferência bancária
+- `DINHEIRO` - Dinheiro
+- `CHEQUE` - Cheque
+
+**Status de Pagamento:**
+- `PENDENTE` - Aguardando pagamento
+- `PAGO` - Pagamento realizado
+- `VENCIDO` - Pagamento em atraso
+- `CANCELADO` - Despesa cancelada
+
+**Resposta de Erro (404 Not Found):**
+```json
+{
+  "error": "Despesa não encontrada"
+}
+```
+
+---
+
 ## 📂 Estrutura do Projeto
 
 ```
@@ -1588,6 +1984,19 @@ docker compose up -d
 | POST | `/diarios` | ✅ Protegida | Criar novo diário |
 | PUT | `/diarios/:id` | ✅ Protegida | Atualizar diário |
 | DELETE | `/diarios/:id` | ✅ Protegida | Deletar diário |
+| **Fornecedores** |
+| GET | `/fornecedores` | ✅ Protegida | Listar todos os fornecedores |
+| GET | `/fornecedores/:id` | ✅ Protegida | Buscar fornecedor por ID |
+| POST | `/fornecedores` | ✅ Protegida | Criar novo fornecedor |
+| PUT | `/fornecedores/:id` | ✅ Protegida | Atualizar fornecedor |
+| DELETE | `/fornecedores/:id` | ✅ Protegida | Deletar fornecedor |
+| **Despesas** |
+| GET | `/despesas` | ✅ Protegida | Listar todas as despesas |
+| GET | `/despesas/:id` | ✅ Protegida | Buscar despesa por ID |
+| POST | `/despesas` | ✅ Protegida | Criar nova despesa |
+| PUT | `/despesas/:id` | ✅ Protegida | Atualizar despesa |
+| DELETE | `/despesas/:id` | ✅ Protegida | Deletar despesa |
+| GET | `/despesas/relatorio/:obra_id` | ✅ Protegida | Relatório de despesas por obra |
 
 ---
 
