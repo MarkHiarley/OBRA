@@ -42,13 +42,13 @@ type Despesa struct {
 	ID                   null.Int    `json:"id"`
 	ObraID               null.Int    `json:"obra_id" binding:"required"`
 	FornecedorID         null.Int    `json:"fornecedor_id,omitempty"`
-	Data                 null.Time   `json:"data" binding:"required"`                // Data da despesa/compra
-	DataVencimento       null.Time   `json:"data_vencimento,omitempty"`              // Data de vencimento do pagamento
+	Data                 null.Time   `json:"data" binding:"required"`   // Data da despesa/compra
+	DataVencimento       null.Time   `json:"data_vencimento,omitempty"` // Data de vencimento do pagamento
 	Descricao            null.String `json:"descricao" binding:"required"`
-	Categoria            null.String `json:"categoria" binding:"required"`           // MATERIAL, MAO_DE_OBRA, COMBUSTIVEL, etc
+	Categoria            null.String `json:"categoria" binding:"required"` // MATERIAL, MAO_DE_OBRA, COMBUSTIVEL, etc
 	Valor                null.Float  `json:"valor" binding:"required"`
-	FormaPagamento       null.String `json:"forma_pagamento" binding:"required"`     // PIX, BOLETO, CARTAO_CREDITO, etc
-	StatusPagamento      null.String `json:"status_pagamento"`                       // PENDENTE, PAGO, CANCELADO
+	FormaPagamento       null.String `json:"forma_pagamento" binding:"required"` // PIX, BOLETO, CARTAO_CREDITO, etc
+	StatusPagamento      null.String `json:"status_pagamento"`                   // PENDENTE, PAGO, CANCELADO
 	DataPagamento        null.Time   `json:"data_pagamento,omitempty"`
 	ResponsavelPagamento null.String `json:"responsavel_pagamento,omitempty"`
 	Observacao           null.String `json:"observacao,omitempty"`

@@ -28,7 +28,7 @@ func (ds *DespesaServices) CreateDespesa(despesa models.Despesa) (int64, error) 
 
 	// Tratar campos nullable
 	var fornecedorID, dataVencimento, dataPagamento interface{}
-	
+
 	if despesa.FornecedorID.Valid {
 		fornecedorID = despesa.FornecedorID.Int64
 	} else {
@@ -99,7 +99,7 @@ func (ds *DespesaServices) GetDespesas() ([]models.DespesaComRelacionamentos, er
 			&despesa.ObraID,
 			&despesa.FornecedorID,
 			&despesa.Data,
-&despesa.DataVencimento,
+			&despesa.DataVencimento,
 			&despesa.DataVencimento,
 			&despesa.Descricao,
 			&despesa.Categoria,
@@ -149,7 +149,7 @@ func (ds *DespesaServices) GetDespesaById(id int64) (models.DespesaComRelacionam
 		&despesa.ObraID,
 		&despesa.FornecedorID,
 		&despesa.Data,
-&despesa.DataVencimento,
+		&despesa.DataVencimento,
 		&despesa.DataVencimento,
 		&despesa.Descricao,
 		&despesa.Categoria,
@@ -206,7 +206,7 @@ func (ds *DespesaServices) GetDespesasByObraId(obraId int64) ([]models.DespesaCo
 			&despesa.ObraID,
 			&despesa.FornecedorID,
 			&despesa.Data,
-&despesa.DataVencimento,
+			&despesa.DataVencimento,
 			&despesa.Descricao,
 			&despesa.Categoria,
 			&despesa.Valor,
@@ -263,7 +263,7 @@ func (ds *DespesaServices) GetDespesasByFornecedorId(fornecedorId int64) ([]mode
 			&despesa.ObraID,
 			&despesa.FornecedorID,
 			&despesa.Data,
-&despesa.DataVencimento,
+			&despesa.DataVencimento,
 			&despesa.Descricao,
 			&despesa.Categoria,
 			&despesa.Valor,
@@ -359,7 +359,7 @@ func (ds *DespesaServices) PutDespesa(id int, despesaToUpdate models.Despesa) (m
 
 	// Tratar campos nullable
 	var fornecedorID, dataVencimento, dataPagamento interface{}
-	
+
 	if despesaToUpdate.FornecedorID.Valid {
 		fornecedorID = despesaToUpdate.FornecedorID.Int64
 	} else {
