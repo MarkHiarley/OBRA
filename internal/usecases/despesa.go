@@ -121,8 +121,8 @@ func (du *DespesaUseCase) validateDespesa(despesa models.Despesa) error {
 		return fmt.Errorf("obra_id é obrigatório")
 	}
 
-	// Valida data_despesa
-	if !despesa.DataDespesa.Valid {
+	// Valida data
+	if !despesa.Data.Valid {
 		return fmt.Errorf("data da despesa é obrigatória")
 	}
 
@@ -145,6 +145,8 @@ func (du *DespesaUseCase) validateDespesa(despesa models.Despesa) error {
 		models.CategoriaMaterialEletrico,
 		models.CategoriaAluguelEquipamento,
 		models.CategoriaTransporte,
+		models.CategoriaImposto,
+		models.CategoriaParceiro,
 		models.CategoriaOutros,
 	}
 
@@ -157,7 +159,7 @@ func (du *DespesaUseCase) validateDespesa(despesa models.Despesa) error {
 	}
 
 	if !categoriaValida {
-		return fmt.Errorf("categoria inválida. Valores permitidos: MATERIAL, MAO_DE_OBRA, COMBUSTIVEL, ALIMENTACAO, MATERIAL_ELETRICO, ALUGUEL_EQUIPAMENTO, TRANSPORTE, OUTROS")
+		return fmt.Errorf("categoria inválida. Valores permitidos: MATERIAL, MAO_DE_OBRA, COMBUSTIVEL, ALIMENTACAO, MATERIAL_ELETRICO, ALUGUEL_EQUIPAMENTO, TRANSPORTE, IMPOSTO, PARCEIRO, OUTROS")
 	}
 
 	// Valida valor
