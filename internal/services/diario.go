@@ -26,6 +26,21 @@ func (pr *DiarioServices) CreateDiario(diario models.DiarioObra) (int64, error) 
               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
               RETURNING id`
 
+	// Converter null.Int para interface{} tratando NULL corretamente
+	var responsavelID interface{}
+	if diario.ResponsavelID.Valid {
+		responsavelID = diario.ResponsavelID.Int64
+	} else {
+		responsavelID = nil
+	}
+
+	var aprovadoPorID interface{}
+	if diario.AprovadoPorID.Valid {
+		aprovadoPorID = diario.AprovadoPorID.Int64
+	} else {
+		aprovadoPorID = nil
+	}
+
 	err := pr.connection.QueryRow(query,
 		diario.ObraID.Int64,
 		diario.Data.String,
@@ -33,8 +48,8 @@ func (pr *DiarioServices) CreateDiario(diario models.DiarioObra) (int64, error) 
 		diario.AtividadesRealizadas.String,
 		diario.Ocorrencias.String,
 		diario.Observacoes.String,
-		diario.ResponsavelID.Int64,
-		diario.AprovadoPorID.Int64,
+		responsavelID,
+		aprovadoPorID,
 		diario.StatusAprovacao.String).Scan(&id)
 
 	if err != nil {
@@ -182,7 +197,23 @@ func (pr DiarioServices) PutDiarios(id int, diarioToUpdate models.DiarioObra) (m
 			update_at =$10
 		WHERE id = $11
 		RETURNING id, obra_id, data, periodo, atividades_realizadas, ocorrencias, observacoes, responsavel_id, aprovado_por_id, status_aprovacao, created_at, update_at`
+
 	var updatedDiario models.DiarioObra
+
+	// Converter null.Int para interface{} tratando NULL corretamente
+	var responsavelID interface{}
+	if diarioToUpdate.ResponsavelID.Valid {
+		responsavelID = diarioToUpdate.ResponsavelID.Int64
+	} else {
+		responsavelID = nil
+	}
+
+	var aprovadoPorID interface{}
+	if diarioToUpdate.AprovadoPorID.Valid {
+		aprovadoPorID = diarioToUpdate.AprovadoPorID.Int64
+	} else {
+		aprovadoPorID = nil
+	}
 
 	err := pr.connection.QueryRowContext(context.Background(), query,
 		diarioToUpdate.ObraID,
@@ -191,8 +222,8 @@ func (pr DiarioServices) PutDiarios(id int, diarioToUpdate models.DiarioObra) (m
 		diarioToUpdate.AtividadesRealizadas,
 		diarioToUpdate.Ocorrencias,
 		diarioToUpdate.Observacoes,
-		diarioToUpdate.ResponsavelID,
-		diarioToUpdate.AprovadoPorID,
+		responsavelID,
+		aprovadoPorID,
 		diarioToUpdate.StatusAprovacao,
 		time.Now(),
 		id, // The ID for the WHERE clause
