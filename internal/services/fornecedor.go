@@ -22,9 +22,10 @@ func NewFornecedorService(connection *sql.DB) FornecedorServices {
 func (fs *FornecedorServices) CreateFornecedor(fornecedor models.Fornecedor) (int64, error) {
 	var id int64
 
-	query := `INSERT INTO fornecedor (nome, tipo_documento, documento, email, telefone, endereco, cidade, estado, ativo) 
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
-              RETURNING id`
+	// Persist contact fields (contato_nome, contato_telefone, contato_email) added to model
+	query := `INSERT INTO fornecedor (nome, tipo_documento, documento, email, telefone, endereco, cidade, estado, contato_nome, contato_telefone, contato_email, ativo) 
+			  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
+			  RETURNING id`
 
 	err := fs.connection.QueryRow(query,
 		fornecedor.Nome.String,
@@ -35,6 +36,9 @@ func (fs *FornecedorServices) CreateFornecedor(fornecedor models.Fornecedor) (in
 		fornecedor.Endereco.String,
 		fornecedor.Cidade.String,
 		fornecedor.Estado.String,
+		fornecedor.ContatoNome.String,
+		fornecedor.ContatoTelefone.String,
+		fornecedor.ContatoEmail.String,
 		fornecedor.Ativo.Bool).Scan(&id)
 
 	if err != nil {
@@ -46,9 +50,9 @@ func (fs *FornecedorServices) CreateFornecedor(fornecedor models.Fornecedor) (in
 }
 
 func (fs *FornecedorServices) GetFornecedores() ([]models.Fornecedor, error) {
-	query := `SELECT id, nome, tipo_documento, documento, email, telefone, endereco, cidade, estado, ativo, created_at, updated_at 
-	          FROM fornecedor 
-	          ORDER BY nome`
+	query := `SELECT id, nome, tipo_documento, documento, email, telefone, endereco, cidade, estado, contato_nome, contato_telefone, contato_email, ativo, created_at, updated_at 
+			  FROM fornecedor 
+			  ORDER BY nome`
 
 	rows, err := fs.connection.Query(query)
 	if err != nil {
@@ -61,6 +65,7 @@ func (fs *FornecedorServices) GetFornecedores() ([]models.Fornecedor, error) {
 
 	for rows.Next() {
 		var fornecedor models.Fornecedor
+
 		err = rows.Scan(
 			&fornecedor.ID,
 			&fornecedor.Nome,
@@ -71,6 +76,9 @@ func (fs *FornecedorServices) GetFornecedores() ([]models.Fornecedor, error) {
 			&fornecedor.Endereco,
 			&fornecedor.Cidade,
 			&fornecedor.Estado,
+			&fornecedor.ContatoNome,
+			&fornecedor.ContatoTelefone,
+			&fornecedor.ContatoEmail,
 			&fornecedor.Ativo,
 			&fornecedor.CreatedAt,
 			&fornecedor.UpdatedAt,
@@ -88,13 +96,14 @@ func (fs *FornecedorServices) GetFornecedores() ([]models.Fornecedor, error) {
 }
 
 func (fs *FornecedorServices) GetFornecedorById(id int64) (models.Fornecedor, error) {
-	query := `SELECT id, nome, tipo_documento, documento, email, telefone, endereco, cidade, estado, ativo, created_at, updated_at 
-	          FROM fornecedor 
-	          WHERE id = $1`
+	query := `SELECT id, nome, tipo_documento, documento, email, telefone, endereco, cidade, estado, contato_nome, contato_telefone, contato_email, ativo, created_at, updated_at 
+			  FROM fornecedor 
+			  WHERE id = $1`
 
 	row := fs.connection.QueryRow(query, id)
 
 	var fornecedor models.Fornecedor
+
 
 	err := row.Scan(
 		&fornecedor.ID,
@@ -106,6 +115,9 @@ func (fs *FornecedorServices) GetFornecedorById(id int64) (models.Fornecedor, er
 		&fornecedor.Endereco,
 		&fornecedor.Cidade,
 		&fornecedor.Estado,
+		&fornecedor.ContatoNome,
+		&fornecedor.ContatoTelefone,
+		&fornecedor.ContatoEmail,
 		&fornecedor.Ativo,
 		&fornecedor.CreatedAt,
 		&fornecedor.UpdatedAt,
@@ -123,22 +135,26 @@ func (fs *FornecedorServices) GetFornecedorById(id int64) (models.Fornecedor, er
 
 func (fs *FornecedorServices) PutFornecedor(id int, fornecedorToUpdate models.Fornecedor) (models.Fornecedor, error) {
 	query := `
-        UPDATE fornecedor 
-        SET 
-            nome = $1,
-            tipo_documento = $2, 
-            documento = $3, 
-            email = $4, 
-            telefone = $5, 
-            endereco = $6, 
-            cidade = $7,
-            estado = $8,
-            ativo = $9,
-			updated_at = $10
-        WHERE id = $11
-        RETURNING id, nome, tipo_documento, documento, email, telefone, endereco, cidade, estado, ativo, created_at, updated_at`
+		UPDATE fornecedor 
+		SET 
+			nome = $1,
+			tipo_documento = $2, 
+			documento = $3, 
+			email = $4, 
+			telefone = $5, 
+			endereco = $6, 
+			cidade = $7,
+			estado = $8,
+			contato_nome = $9,
+			contato_telefone = $10,
+			contato_email = $11,
+			ativo = $12,
+			updated_at = $13
+		WHERE id = $14
+		RETURNING id, nome, tipo_documento, documento, email, telefone, endereco, cidade, estado, contato_nome, contato_telefone, contato_email, ativo, created_at, updated_at`
 
 	var updatedFornecedor models.Fornecedor
+
 
 	err := fs.connection.QueryRowContext(context.Background(), query,
 		fornecedorToUpdate.Nome.String,
@@ -149,6 +165,9 @@ func (fs *FornecedorServices) PutFornecedor(id int, fornecedorToUpdate models.Fo
 		fornecedorToUpdate.Endereco.String,
 		fornecedorToUpdate.Cidade.String,
 		fornecedorToUpdate.Estado.String,
+		fornecedorToUpdate.ContatoNome.String,
+		fornecedorToUpdate.ContatoTelefone.String,
+		fornecedorToUpdate.ContatoEmail.String,
 		fornecedorToUpdate.Ativo.Bool,
 		time.Now(),
 		id,
@@ -162,6 +181,9 @@ func (fs *FornecedorServices) PutFornecedor(id int, fornecedorToUpdate models.Fo
 		&updatedFornecedor.Endereco,
 		&updatedFornecedor.Cidade,
 		&updatedFornecedor.Estado,
+		&updatedFornecedor.ContatoNome,
+		&updatedFornecedor.ContatoTelefone,
+		&updatedFornecedor.ContatoEmail,
 		&updatedFornecedor.Ativo,
 		&updatedFornecedor.CreatedAt,
 		&updatedFornecedor.UpdatedAt,

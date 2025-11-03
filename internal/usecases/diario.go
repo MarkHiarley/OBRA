@@ -5,6 +5,7 @@ import (
 	"codxis-obras/internal/services"
 	"database/sql"
 	"fmt"
+	"strings"
 )
 
 type DiarioUseCase struct {
@@ -18,6 +19,24 @@ func NewDiarioUsecase(services services.DiarioServices) DiarioUseCase {
 }
 
 func (pu *DiarioUseCase) CreateDiario(newDiario models.DiarioObra) (models.DiarioObra, error) {
+
+	// Validação: relação entre status e aprovado_por_id
+	status := ""
+	if newDiario.StatusAprovacao.Valid {
+		status = strings.ToUpper(newDiario.StatusAprovacao.String)
+	}
+
+	if status == "APROVADO" {
+		if !newDiario.AprovadoPorID.Valid || newDiario.AprovadoPorID.Int64 == 0 {
+			return models.DiarioObra{}, fmt.Errorf("aprovado_por_id é obrigatório quando status_aprovacao = APROVADO")
+		}
+	}
+
+	if status == "PENDENTE" {
+		if newDiario.AprovadoPorID.Valid && newDiario.AprovadoPorID.Int64 != 0 {
+			return models.DiarioObra{}, fmt.Errorf("aprovado_por_id deve ser nulo quando status_aprovacao = PENDENTE")
+		}
+	}
 
 	diarioId, err := pu.services.CreateDiario(newDiario)
 
@@ -54,6 +73,23 @@ func (pu *DiarioUseCase) GetDiariosByObraId(id int64) ([]models.DiarioObra, erro
 }
 
 func (pu *DiarioUseCase) PutDiario(id int, updatedDiario models.DiarioObra) (models.DiarioObra, error) {
+	// Validação: relação entre status e aprovado_por_id
+	status := ""
+	if updatedDiario.StatusAprovacao.Valid {
+		status = strings.ToUpper(updatedDiario.StatusAprovacao.String)
+	}
+
+	if status == "APROVADO" {
+		if !updatedDiario.AprovadoPorID.Valid || updatedDiario.AprovadoPorID.Int64 == 0 {
+			return models.DiarioObra{}, fmt.Errorf("aprovado_por_id é obrigatório quando status_aprovacao = APROVADO")
+		}
+	}
+
+	if status == "PENDENTE" {
+		if updatedDiario.AprovadoPorID.Valid && updatedDiario.AprovadoPorID.Int64 != 0 {
+			return models.DiarioObra{}, fmt.Errorf("aprovado_por_id deve ser nulo quando status_aprovacao = PENDENTE")
+		}
+	}
 
 	updatedDiario, err := pu.services.PutDiarios(id, updatedDiario)
 	if err != nil {

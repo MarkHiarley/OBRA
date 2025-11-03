@@ -15,6 +15,7 @@ type Obra struct {
 	DataFimPrevista null.String `json:"data_fim_prevista,omitempty"`
 	Orcamento       null.Float  `json:"orcamento,omitempty"`
 	Status          null.String `json:"status"`
+	Art             null.String `json:"art,omitempty"`
 	EnderecoRua     null.String `json:"endereco_rua,omitempty"`
 	EnderecoNumero  null.String `json:"endereco_numero,omitempty"`
 	EnderecoBairro  null.String `json:"endereco_bairro,omitempty"`

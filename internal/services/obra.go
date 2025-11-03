@@ -22,9 +22,10 @@ func NewObraService(connection *sql.DB) ObraServices {
 func (pr *ObraServices) CreateObra(obra models.Obra) (int64, error) {
 	var id int64
 
-	query := `INSERT INTO obra (nome, contrato_numero, contratante_id, responsavel_id, data_inicio, prazo_dias, data_fim_prevista, orcamento, status, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, ativo ) 
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) 
-              RETURNING id`
+	// Include art column (nullable) so new field is persisted
+	query := `INSERT INTO obra (nome, contrato_numero, contratante_id, responsavel_id, data_inicio, prazo_dias, data_fim_prevista, orcamento, status, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, art, ativo ) 
+			  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) 
+			  RETURNING id`
 
 	err := pr.connection.QueryRow(query,
 		obra.Nome.String,
@@ -43,6 +44,7 @@ func (pr *ObraServices) CreateObra(obra models.Obra) (int64, error) {
 		obra.EnderecoEstado.String,
 		obra.EnderecoCep.String,
 		obra.Observacoes.String,
+		obra.Art.String,
 		obra.Ativo).Scan(&id)
 
 	if err != nil {
@@ -54,7 +56,7 @@ func (pr *ObraServices) CreateObra(obra models.Obra) (int64, error) {
 }
 
 func (pr *ObraServices) GetObras() ([]models.Obra, error) {
-	query := "select id, nome, contrato_numero, contratante_id, responsavel_id, data_inicio, prazo_dias, data_fim_prevista, orcamento, status, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, ativo, created_at, updated_at from obra"
+	query := "select id, nome, contrato_numero, contratante_id, responsavel_id, data_inicio, prazo_dias, data_fim_prevista, orcamento, status, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, art, ativo, created_at, updated_at from obra"
 	rows, err := pr.connection.Query(query)
 	if err != nil {
 		fmt.Println(err)
@@ -65,6 +67,7 @@ func (pr *ObraServices) GetObras() ([]models.Obra, error) {
 	var obraObj models.Obra
 
 	for rows.Next() {
+
 		err = rows.Scan(
 			&obraObj.ID,
 			&obraObj.Nome,
@@ -83,6 +86,7 @@ func (pr *ObraServices) GetObras() ([]models.Obra, error) {
 			&obraObj.EnderecoEstado,
 			&obraObj.EnderecoCep,
 			&obraObj.Observacoes,
+			&obraObj.Art,
 			&obraObj.Ativo,
 			&obraObj.CreatedAt,
 			&obraObj.UpdatedAt)
@@ -103,7 +107,7 @@ func (pr *ObraServices) GetObras() ([]models.Obra, error) {
 func (pr ObraServices) GetObraById(id int64) (models.Obra, error) {
 
 	//id, nome, email, tipo_documento, documento, telefone, perfil_acesso, ativo, created_at, updated_at
-	query := "select id, nome, contrato_numero, contratante_id, responsavel_id, data_inicio, prazo_dias, data_fim_prevista,orcamento, endereco_rua,endereco_numero, endereco_bairro, endereco_cidade,endereco_estado, endereco_cep, observacoes, status, ativo,created_at, updated_at from obra where id = $1"
+	query := "select id, nome, contrato_numero, contratante_id, responsavel_id, data_inicio, prazo_dias, data_fim_prevista,orcamento, endereco_rua,endereco_numero, endereco_bairro, endereco_cidade,endereco_estado, endereco_cep, observacoes, art, status, ativo,created_at, updated_at from obra where id = $1"
 
 	row := pr.connection.QueryRow(query, id)
 	fmt.Println(query, id)
@@ -126,6 +130,7 @@ func (pr ObraServices) GetObraById(id int64) (models.Obra, error) {
 		&obra.EnderecoEstado,
 		&obra.EnderecoCep,
 		&obra.Observacoes,
+		&obra.Art,
 		&obra.Status,
 		&obra.Ativo,
 		&obra.CreatedAt,
@@ -147,28 +152,29 @@ func (pr ObraServices) GetObraById(id int64) (models.Obra, error) {
 func (pr ObraServices) PutObra(id int, ObraToUpdate models.Obra) (models.Obra, error) {
 
 	query := `
-        UPDATE obra 
-        SET 
-            nome = $1,
-            contrato_numero = $2, 
-            contratante_id = $3, 
-            responsavel_id = $4, 
-            data_inicio = $5, 
-            prazo_dias = $6, 
-            data_fim_prevista = $7,
-            orcamento = $8,
-            status = $9,
-            endereco_rua = $10,
-            endereco_numero = $11,
-            endereco_bairro = $12,
-            endereco_cidade = $13,
-            endereco_estado = $14,
-            endereco_cep = $15,
-            observacoes = $16,
-            ativo = $17,
-			updated_at =$18
-        WHERE id = $19
-        RETURNING id, nome, contrato_numero, contratante_id, responsavel_id, data_inicio, prazo_dias, data_fim_prevista,orcamento,status, endereco_rua,endereco_numero, endereco_bairro, endereco_cidade,endereco_estado, endereco_cep, observacoes,ativo,created_at, updated_at`
+		UPDATE obra 
+		SET 
+			nome = $1,
+			contrato_numero = $2, 
+			contratante_id = $3, 
+			responsavel_id = $4, 
+			data_inicio = $5, 
+			prazo_dias = $6, 
+			data_fim_prevista = $7,
+			orcamento = $8,
+			status = $9,
+			endereco_rua = $10,
+			endereco_numero = $11,
+			endereco_bairro = $12,
+			endereco_cidade = $13,
+			endereco_estado = $14,
+			endereco_cep = $15,
+			observacoes = $16,
+			art = $17,
+			ativo = $18,
+			updated_at = $19
+		WHERE id = $20
+		RETURNING id, nome, contrato_numero, contratante_id, responsavel_id, data_inicio, prazo_dias, data_fim_prevista, orcamento, status, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, art, ativo, created_at, updated_at`
 	var updatedObra models.Obra
 
 	err := pr.connection.QueryRowContext(context.Background(), query,
@@ -188,6 +194,7 @@ func (pr ObraServices) PutObra(id int, ObraToUpdate models.Obra) (models.Obra, e
 		ObraToUpdate.EnderecoEstado.String,
 		ObraToUpdate.EnderecoCep.String,
 		ObraToUpdate.Observacoes.String,
+		ObraToUpdate.Art.String,
 		ObraToUpdate.Ativo.Bool,
 		time.Now(),
 		id,
@@ -209,6 +216,7 @@ func (pr ObraServices) PutObra(id int, ObraToUpdate models.Obra) (models.Obra, e
 		&updatedObra.EnderecoEstado,
 		&updatedObra.EnderecoCep,
 		&updatedObra.Observacoes,
+		&updatedObra.Art,
 		&updatedObra.Ativo,
 		&updatedObra.CreatedAt,
 		&updatedObra.UpdatedAt,
