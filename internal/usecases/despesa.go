@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 )
 
 type DespesaUseCase struct {
@@ -24,15 +25,38 @@ func (du *DespesaUseCase) CreateDespesa(newDespesa models.Despesa) (models.Despe
 		newDespesa.Data = newDespesa.DataVencimento
 	}
 
-	// Validações de negócio
-	if err := du.validateDespesa(newDespesa); err != nil {
-		return models.Despesa{}, err
+	// Se nem data nem data_vencimento foram fornecidos, use data atual
+	if !newDespesa.Data.Valid {
+		now := time.Now()
+		newDespesa.Data.Time = now
+		newDespesa.Data.Valid = true
+		// Também definir data_vencimento como hoje se não foi fornecida
+		if !newDespesa.DataVencimento.Valid {
+			newDespesa.DataVencimento.Time = now
+			newDespesa.DataVencimento.Valid = true
+		}
+	}
+
+	// Define padrões para campos opcionais
+	if !newDespesa.Categoria.Valid || strings.TrimSpace(newDespesa.Categoria.String) == "" {
+		newDespesa.Categoria.String = models.CategoriaOutros
+		newDespesa.Categoria.Valid = true
+	}
+
+	if !newDespesa.FormaPagamento.Valid || strings.TrimSpace(newDespesa.FormaPagamento.String) == "" {
+		newDespesa.FormaPagamento.String = models.FormaPagamentoPix
+		newDespesa.FormaPagamento.Valid = true
 	}
 
 	// Define status padrão como PENDENTE se não informado
 	if !newDespesa.StatusPagamento.Valid || strings.TrimSpace(newDespesa.StatusPagamento.String) == "" {
 		newDespesa.StatusPagamento.String = models.StatusPagamentoPendente
 		newDespesa.StatusPagamento.Valid = true
+	}
+
+	// Validações de negócio
+	if err := du.validateDespesa(newDespesa); err != nil {
+		return models.Despesa{}, err
 	}
 
 	despesaId, err := du.services.CreateDespesa(newDespesa)
@@ -136,11 +160,7 @@ func (du *DespesaUseCase) validateDespesa(despesa models.Despesa) error {
 		return fmt.Errorf("descrição é obrigatória")
 	}
 
-	// Valida categoria
-	if !despesa.Categoria.Valid || strings.TrimSpace(despesa.Categoria.String) == "" {
-		return fmt.Errorf("categoria é obrigatória")
-	}
-
+	// Valida categoria (agora já definida como padrão se ausente)
 	categoria := strings.ToUpper(despesa.Categoria.String)
 	categoriesValidas := []string{
 		models.CategoriaMaterial,
@@ -172,11 +192,7 @@ func (du *DespesaUseCase) validateDespesa(despesa models.Despesa) error {
 		return fmt.Errorf("valor deve ser maior ou igual a zero")
 	}
 
-	// Valida forma de pagamento
-	if !despesa.FormaPagamento.Valid || strings.TrimSpace(despesa.FormaPagamento.String) == "" {
-		return fmt.Errorf("forma de pagamento é obrigatória")
-	}
-
+	// Valida forma de pagamento (agora já definida como padrão se ausente)
 	formaPagamento := strings.ToUpper(despesa.FormaPagamento.String)
 	formasPagamentoValidas := []string{
 		models.FormaPagamentoPix,
