@@ -104,7 +104,6 @@ func (fs *FornecedorServices) GetFornecedorById(id int64) (models.Fornecedor, er
 
 	var fornecedor models.Fornecedor
 
-
 	err := row.Scan(
 		&fornecedor.ID,
 		&fornecedor.Nome,
@@ -154,7 +153,6 @@ func (fs *FornecedorServices) PutFornecedor(id int, fornecedorToUpdate models.Fo
 		RETURNING id, nome, tipo_documento, documento, email, telefone, endereco, cidade, estado, contato_nome, contato_telefone, contato_email, ativo, created_at, updated_at`
 
 	var updatedFornecedor models.Fornecedor
-
 
 	err := fs.connection.QueryRowContext(context.Background(), query,
 		fornecedorToUpdate.Nome.String,
