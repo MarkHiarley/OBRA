@@ -3,11 +3,15 @@ package controller
 import (
 	"codxis-obras/internal/models"
 	"codxis-obras/internal/usecases"
+	"encoding/json"
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"gopkg.in/guregu/null.v4"
 )
 
 type despesaController struct {
@@ -21,14 +25,99 @@ func NewDespesaController(usecase usecases.DespesaUseCase) despesaController {
 }
 
 func (dc *despesaController) CreateDespesa(ctx *gin.Context) {
-	var despesa models.Despesa
-
-	if err := ctx.ShouldBindJSON(&despesa); err != nil {
+	// Parse raw JSON to handle custom date formats
+	var rawData map[string]interface{}
+	if err := ctx.ShouldBindJSON(&rawData); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error":   "Dados inválidos",
 			"details": err.Error(),
 		})
 		return
+	}
+
+	var despesa models.Despesa
+
+	// Parse standard fields
+	if val, ok := rawData["obra_id"]; ok {
+		if floatVal, ok := val.(float64); ok {
+			despesa.ObraID = null.IntFrom(int64(floatVal))
+		}
+	}
+	if val, ok := rawData["fornecedor_id"]; ok {
+		if floatVal, ok := val.(float64); ok {
+			despesa.FornecedorID = null.IntFrom(int64(floatVal))
+		}
+	}
+	if val, ok := rawData["descricao"]; ok {
+		if strVal, ok := val.(string); ok {
+			despesa.Descricao = null.StringFrom(strVal)
+		}
+	}
+	if val, ok := rawData["categoria"]; ok {
+		if strVal, ok := val.(string); ok {
+			despesa.Categoria = null.StringFrom(strings.ToUpper(strVal))
+		}
+	}
+	if val, ok := rawData["valor"]; ok {
+		if floatVal, ok := val.(float64); ok {
+			despesa.Valor = null.FloatFrom(floatVal)
+		}
+	}
+	if val, ok := rawData["forma_pagamento"]; ok {
+		if strVal, ok := val.(string); ok {
+			despesa.FormaPagamento = null.StringFrom(strings.ToUpper(strVal))
+		}
+	}
+	if val, ok := rawData["status_pagamento"]; ok {
+		if strVal, ok := val.(string); ok {
+			despesa.StatusPagamento = null.StringFrom(strings.ToUpper(strVal))
+		}
+	}
+	if val, ok := rawData["observacao"]; ok {
+		if strVal, ok := val.(string); ok {
+			despesa.Observacao = null.StringFrom(strVal)
+		}
+	}
+
+	// Parse dates with flexible format support
+	parseDate := func(dateStr string) (time.Time, error) {
+		formats := []string{
+			"2006-01-02T15:04:05Z07:00", // ISO format
+			"2006-01-02T15:04:05Z",      // ISO format (Z)
+			"2006-01-02T15:04:05",       // ISO format (no timezone)
+			"2006-01-02",                // Date only (Pablo's format)
+		}
+
+		for _, format := range formats {
+			if t, err := time.Parse(format, dateStr); err == nil {
+				return t, nil
+			}
+		}
+		return time.Time{}, json.Unmarshal([]byte(`"`+dateStr+`"`), new(time.Time))
+	}
+
+	if val, ok := rawData["data"]; ok {
+		if strVal, ok := val.(string); ok && strVal != "" {
+			if t, err := parseDate(strVal); err == nil {
+				despesa.Data = null.TimeFrom(t)
+			}
+		}
+	}
+
+	if val, ok := rawData["data_vencimento"]; ok {
+		if strVal, ok := val.(string); ok && strVal != "" {
+			if t, err := parseDate(strVal); err == nil {
+				despesa.DataVencimento = null.TimeFrom(t)
+			}
+		}
+	}
+
+	if val, ok := rawData["data_pagamento"]; ok {
+		if strVal, ok := val.(string); ok && strVal != "" {
+			if t, err := parseDate(strVal); err == nil {
+				despesa.DataPagamento = null.TimeFrom(t)
+			}
+		}
 	}
 
 	createdDespesa, err := dc.despesaUseCase.CreateDespesa(despesa)
