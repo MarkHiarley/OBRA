@@ -24,6 +24,26 @@ Pronto! A API está rodando em `http://localhost:9090` 🎉
 
 ---
 
+## 🛠️ Alterações recentes e notas de migração
+
+Estas alterações foram identificadas a partir da comparação entre o frontend e a API e implementadas parcialmente via migrations adicionadas ao diretório `migrations/`.
+
+Principais mudanças aplicadas (migrations criadas):
+
+- `000017_fix_diario_aprovador.up.sql` — garante que `aprovado_por_id` seja NULLABLE e adiciona uma constraint defensiva que relaciona `status` e `aprovado_por_id` (APROVADO -> aprovado_por_id NOT NULL; PENDENTE -> aprovado_por_id NULL).
+- `000018_rename_data_despesa_to_data_vencimento.up.sql` — renomeia `data_despesa` para `data_vencimento` quando aplicável.
+- `000019_add_endereco_pessoa.up.sql` — adiciona campos de endereço em `pessoa` (`endereco_rua`, `endereco_numero`, `endereco_complemento`, `endereco_bairro`, `endereco_cidade`, `endereco_estado`, `endereco_cep`).
+- `000020_add_art_obra.up.sql` — adiciona o campo `art` na tabela `obra`.
+
+Recomendações antes de aplicar migrations em produção:
+
+- Faça backup do banco: `docker exec -i db_obras pg_dump -U obras -d obrasdb > /tmp/obrasdb_backup.sql` (ou gz).
+- Rode as migrations em uma janela de manutenção coordenada.
+- Verifique dados inconsistentes antes de aplicar constraints restritivas (ex.: diários com `status = 'PENDENTE'` mas `aprovado_por_id` preenchido). Caso existam, corrija com um `UPDATE` antes de aplicar o CHECK.
+
+Se quiser, o script `run-migrations.sh` já aplica todos os arquivos `migrations/*.up.sql` na ordem; veja a seção `Migrations` mais abaixo.
+
+
 ## �📋 Índice
 
 - [Sobre o Projeto](#sobre-o-projeto)
@@ -411,6 +431,13 @@ GET /pessoas
       "email": "joao@exemplo.com",
       "telefone": "(11) 98765-4321",
       "cargo": "Engenheiro Civil",
+      "endereco_rua": "Av. Principal",
+      "endereco_numero": "1000",
+      "endereco_complemento": null,
+      "endereco_bairro": "Centro",
+      "endereco_cidade": "São Paulo",
+      "endereco_estado": "SP",
+      "endereco_cep": "01000-000",
       "ativo": true,
       "createdAt": "2025-10-16T10:00:00Z",
       "updatedAt": "2025-10-16T10:00:00Z"
@@ -437,6 +464,13 @@ GET /pessoas/:id
   "email": "joao@exemplo.com",
   "telefone": "(11) 98765-4321",
   "cargo": "Engenheiro Civil",
+  "endereco_rua": "Av. Principal",
+  "endereco_numero": "1000",
+  "endereco_complemento": null,
+  "endereco_bairro": "Centro",
+  "endereco_cidade": "São Paulo",
+  "endereco_estado": "SP",
+  "endereco_cep": "01000-000",
   "ativo": true,
   "createdAt": "2025-10-16T10:00:00Z",
   "updatedAt": "2025-10-16T10:00:00Z"
@@ -464,6 +498,13 @@ POST /pessoas
   "email": "maria@exemplo.com",
   "telefone": "(11) 91234-5678",
   "cargo": "Arquiteta",
+  "endereco_rua": "Rua das Flores",
+  "endereco_numero": "123",
+  "endereco_complemento": "Apto 12",
+  "endereco_bairro": "Jardim",
+  "endereco_cidade": "São Paulo",
+  "endereco_estado": "SP",
+  "endereco_cep": "02000-000",
   "ativo": true
 }
 ```
@@ -504,6 +545,13 @@ PUT /pessoas/:id
   "email": "maria.santos@exemplo.com",
   "telefone": "(11) 91234-5678",
   "cargo": "Arquiteta Sênior",
+  "endereco_rua": "Rua das Flores",
+  "endereco_numero": "123",
+  "endereco_complemento": "Apto 12",
+  "endereco_bairro": "Jardim",
+  "endereco_cidade": "São Paulo",
+  "endereco_estado": "SP",
+  "endereco_cep": "02000-000",
   "ativo": true
 }
 ```
@@ -771,6 +819,7 @@ GET /obras
       "data_fim_prevista": "2026-01-15",
       "orcamento": 5000000.00,
       "status": "em_andamento",
+      "art": null,
       "endereco_rua": "Av. Principal",
       "endereco_numero": "1000",
       "endereco_bairro": "Centro",
@@ -836,6 +885,7 @@ POST /obras
   "prazo_dias": 180,
   "orcamento": 1500000.00,
   "status": "planejamento",
+  "art": null,
   "endereco_rua": "Rua Secundária",
   "endereco_numero": "500",
   "endereco_bairro": "Jardim",
@@ -982,7 +1032,7 @@ GET /diarios
       "observacoes": "Trabalho interrompido às 14h",
       "responsavel_id": 2,
       "aprovado_por_id": 1,
-      "status_aprovacao": "aprovado",
+      "status_aprovacao": "APROVADO",
       "createdAt": "2025-10-15T18:00:00Z",
       "updatedAt": "2025-10-15T19:00:00Z"
     }
@@ -1010,7 +1060,7 @@ GET /diarios/:id
   "observacoes": "Trabalho interrompido às 14h",
   "responsavel_id": 2,
   "aprovado_por_id": 1,
-  "status_aprovacao": "aprovado",
+  "status_aprovacao": "APROVADO",
   "createdAt": "2025-10-15T18:00:00Z",
   "updatedAt": "2025-10-15T19:00:00Z"
 }
@@ -1075,7 +1125,7 @@ POST /diarios
   "ocorrencias": "Entrega de materiais atrasou 2 horas",
   "observacoes": "Equipe trabalhou até às 18h para compensar",
   "responsavel_id": 2,
-  "status_aprovacao": "pendente"
+  "status_aprovacao": "PENDENTE"
 }
 ```
 
@@ -1093,7 +1143,7 @@ POST /diarios
     "observacoes": "Equipe trabalhou até às 18h para compensar",
     "responsavel_id": 2,
     "aprovado_por_id": null,
-    "status_aprovacao": "pendente",
+    "status_aprovacao": "PENDENTE",
     "createdAt": "2025-10-16T19:00:00Z",
     "updatedAt": "2025-10-16T19:00:00Z"
   }
@@ -1119,7 +1169,7 @@ PUT /diarios/:id
   "observacoes": "Equipe trabalhou até às 18h para compensar. Trabalho concluído.",
   "responsavel_id": 2,
   "aprovado_por_id": 1,
-  "status_aprovacao": "aprovado"
+  "status_aprovacao": "APROVADO"
 }
 ```
 
@@ -1737,6 +1787,18 @@ for file in migrations/*.up.sql; do
   docker exec -i db_obras psql -U obras -d obrasdb < "$file"
 done
 ```
+
+### Notas sobre as migrations recentes
+
+Foram adicionados os seguintes arquivos de migration (UP) ao diretório `migrations/` para corrigir inconsistências detectadas entre frontend e API:
+
+- `000017_fix_diario_aprovador.up.sql` — altera `diario_obra.aprovado_por_id` para permitir NULL e adiciona a constraint `ck_diario_aprovador_status` para validar a relação entre `status_aprovacao` e `aprovado_por_id`.
+- `000018_rename_data_despesa_to_data_vencimento.up.sql` — renomeia `despesa.data_despesa` para `despesa.data_vencimento` quando aplicável.
+- `000019_add_endereco_pessoa.up.sql` — adiciona colunas de endereço na tabela `pessoa`.
+- `000020_add_art_obra.up.sql` — adiciona coluna `art` na tabela `obra`.
+
+Importante: revise os dados existentes antes de aplicar constraints mais restritivas (ex.: cheque por diários com `status_aprovacao = 'PENDENTE'` mas `aprovado_por_id IS NOT NULL`).
+
 
 #### Opção 3: Usando Makefile
 
