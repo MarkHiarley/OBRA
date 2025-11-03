@@ -6,7 +6,10 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 	"time"
+
+	null "gopkg.in/guregu/null.v4"
 )
 
 type FornecedorServices struct {
@@ -41,7 +44,26 @@ func (fs *FornecedorServices) CreateFornecedor(fornecedor models.Fornecedor) (in
 		fornecedor.ContatoEmail.String,
 		fornecedor.Ativo.Bool).Scan(&id)
 
+	// Fallback for older DB schemas without contato_* columns
 	if err != nil {
+		if strings.Contains(err.Error(), "column \"contato_nome\"") || strings.Contains(err.Error(), "contato_nome") || strings.Contains(err.Error(), "does not exist") {
+			legacy := `INSERT INTO fornecedor (nome, tipo_documento, documento, email, telefone, endereco, cidade, estado, ativo) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`
+			err2 := fs.connection.QueryRow(legacy,
+				fornecedor.Nome.String,
+				fornecedor.TipoDocumento.String,
+				fornecedor.Documento.String,
+				fornecedor.Email.String,
+				fornecedor.Telefone.String,
+				fornecedor.Endereco.String,
+				fornecedor.Cidade.String,
+				fornecedor.Estado.String,
+				fornecedor.Ativo.Bool).Scan(&id)
+			if err2 != nil {
+				fmt.Printf("Erro ao criar fornecedor (legacy): %v\n", err2)
+				return 0, err2
+			}
+			return id, nil
+		}
 		fmt.Printf("Erro ao criar fornecedor: %v\n", err)
 		return 0, err
 	}
@@ -54,10 +76,25 @@ func (fs *FornecedorServices) GetFornecedores() ([]models.Fornecedor, error) {
 			  FROM fornecedor 
 			  ORDER BY nome`
 
-	rows, err := fs.connection.Query(query)
+	var rows *sql.Rows
+	var legacyMode bool
+	var err error
+
+	rows, err = fs.connection.Query(query)
 	if err != nil {
-		fmt.Println(err)
-		return []models.Fornecedor{}, err
+		// Fallback for older schemas without contato_* columns
+		if strings.Contains(err.Error(), "contato_nome") || strings.Contains(err.Error(), "does not exist") {
+			legacy := `SELECT id, nome, tipo_documento, documento, email, telefone, endereco, cidade, estado, ativo, created_at, updated_at FROM fornecedor ORDER BY nome`
+			rows, err = fs.connection.Query(legacy)
+			if err != nil {
+				fmt.Println(err)
+				return []models.Fornecedor{}, err
+			}
+			legacyMode = true
+		} else {
+			fmt.Println(err)
+			return []models.Fornecedor{}, err
+		}
 	}
 	defer rows.Close()
 
@@ -66,23 +103,44 @@ func (fs *FornecedorServices) GetFornecedores() ([]models.Fornecedor, error) {
 	for rows.Next() {
 		var fornecedor models.Fornecedor
 
-		err = rows.Scan(
-			&fornecedor.ID,
-			&fornecedor.Nome,
-			&fornecedor.TipoDocumento,
-			&fornecedor.Documento,
-			&fornecedor.Email,
-			&fornecedor.Telefone,
-			&fornecedor.Endereco,
-			&fornecedor.Cidade,
-			&fornecedor.Estado,
-			&fornecedor.ContatoNome,
-			&fornecedor.ContatoTelefone,
-			&fornecedor.ContatoEmail,
-			&fornecedor.Ativo,
-			&fornecedor.CreatedAt,
-			&fornecedor.UpdatedAt,
-		)
+		if legacyMode {
+			err = rows.Scan(
+				&fornecedor.ID,
+				&fornecedor.Nome,
+				&fornecedor.TipoDocumento,
+				&fornecedor.Documento,
+				&fornecedor.Email,
+				&fornecedor.Telefone,
+				&fornecedor.Endereco,
+				&fornecedor.Cidade,
+				&fornecedor.Estado,
+				&fornecedor.Ativo,
+				&fornecedor.CreatedAt,
+				&fornecedor.UpdatedAt,
+			)
+			// ensure contato fields are zeroed
+			fornecedor.ContatoNome = null.String{}
+			fornecedor.ContatoTelefone = null.String{}
+			fornecedor.ContatoEmail = null.String{}
+		} else {
+			err = rows.Scan(
+				&fornecedor.ID,
+				&fornecedor.Nome,
+				&fornecedor.TipoDocumento,
+				&fornecedor.Documento,
+				&fornecedor.Email,
+				&fornecedor.Telefone,
+				&fornecedor.Endereco,
+				&fornecedor.Cidade,
+				&fornecedor.Estado,
+				&fornecedor.ContatoNome,
+				&fornecedor.ContatoTelefone,
+				&fornecedor.ContatoEmail,
+				&fornecedor.Ativo,
+				&fornecedor.CreatedAt,
+				&fornecedor.UpdatedAt,
+			)
+		}
 
 		if err != nil {
 			fmt.Println(err)
