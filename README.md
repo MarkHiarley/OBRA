@@ -1137,7 +1137,7 @@ GET /diarios/:id
 
 #### Buscar diários por obra
 ```http
-GET /diarios/:id/obra
+GET /diarios/obra/:id
 ```
 
 **Parâmetros:**
@@ -1360,6 +1360,9 @@ POST /fornecedores
   "endereco": "Rua dos Materiais, 500",
   "cidade": "São Paulo",
   "estado": "SP",
+  "contato_nome": "Rafael Souza",
+  "contato_telefone": "(11) 91234-0000",
+  "contato_email": "rafael@ferragensmoderna.com",
   "ativo": true
 }
 ```
@@ -1511,6 +1514,8 @@ POST /despesas
 ```
 
 **Body:**
+Note: the API accepts either `data` (date of the expense) or `data_vencimento` (due date). If `data` is omitted and `data_vencimento` is provided, the server will fallback to using `data_vencimento` as `data`.
+
 ```json
 {
   "obra_id": 1,
@@ -1518,7 +1523,7 @@ POST /despesas
   "descricao": "Pagamento de pedreiros - semana 42",
   "categoria": "MAO_DE_OBRA",
   "valor": 2800.00,
-  "data_vencimento": "2025-10-25",
+  "data_vencimento": "2025-10-25T00:00:00Z",
   "forma_pagamento": "PIX",
   "status_pagamento": "PENDENTE",
   "observacoes": "Pagamento semanal da equipe"

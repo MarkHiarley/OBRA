@@ -42,7 +42,7 @@ type Despesa struct {
 	ID                   null.Int    `json:"id"`
 	ObraID               null.Int    `json:"obra_id" binding:"required"`
 	FornecedorID         null.Int    `json:"fornecedor_id,omitempty"`
-	Data                 null.Time   `json:"data" binding:"required"`   // Data da despesa/compra
+	Data                 null.Time   `json:"data,omitempty"`            // Data da despesa/compra (aceita também data_vencimento como fallback)
 	DataVencimento       null.Time   `json:"data_vencimento,omitempty"` // Data de vencimento do pagamento
 	Descricao            null.String `json:"descricao" binding:"required"`
 	Categoria            null.String `json:"categoria" binding:"required"` // MATERIAL, MAO_DE_OBRA, COMBUSTIVEL, etc

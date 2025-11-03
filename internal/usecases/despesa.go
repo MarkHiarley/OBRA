@@ -19,6 +19,11 @@ func NewDespesaUsecase(services services.DespesaServices) DespesaUseCase {
 }
 
 func (du *DespesaUseCase) CreateDespesa(newDespesa models.Despesa) (models.Despesa, error) {
+	// Compatibilidade: se cliente enviar apenas data_vencimento, use-a como data
+	if !newDespesa.Data.Valid && newDespesa.DataVencimento.Valid {
+		newDespesa.Data = newDespesa.DataVencimento
+	}
+
 	// Validações de negócio
 	if err := du.validateDespesa(newDespesa); err != nil {
 		return models.Despesa{}, err
@@ -121,7 +126,7 @@ func (du *DespesaUseCase) validateDespesa(despesa models.Despesa) error {
 		return fmt.Errorf("obra_id é obrigatório")
 	}
 
-	// Valida data
+	// Valida data: aceita data ou, se já foi feito fallback, data estará preenchida
 	if !despesa.Data.Valid {
 		return fmt.Errorf("data da despesa é obrigatória")
 	}
@@ -217,8 +222,8 @@ func (du *DespesaUseCase) validateDespesa(despesa models.Despesa) error {
 		}
 	}
 
-	// Se status é PAGO, data_pagamento deve estar preenchida
-	if despesa.StatusPagamento.Valid && despesa.StatusPagamento.String == models.StatusPagamentoPago {
+	// Se status é PAGO, data_pagamento deve estar preenchida (compare em MAIÚSCULAS para tolerar input em minúsculas)
+	if despesa.StatusPagamento.Valid && strings.ToUpper(despesa.StatusPagamento.String) == models.StatusPagamentoPago {
 		if !despesa.DataPagamento.Valid {
 			return fmt.Errorf("data de pagamento é obrigatória quando status é PAGO")
 		}
