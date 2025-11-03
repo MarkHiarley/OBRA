@@ -48,7 +48,7 @@ type Despesa struct {
 	Categoria            null.String `json:"categoria,omitempty"` // MATERIAL, MAO_DE_OBRA, COMBUSTIVEL, etc (opcional - padrão OUTROS)
 	Valor                null.Float  `json:"valor" binding:"required"`
 	FormaPagamento       null.String `json:"forma_pagamento,omitempty"` // PIX, BOLETO, CARTAO_CREDITO, etc (opcional - padrão PIX)
-	StatusPagamento      null.String `json:"status_pagamento"`                   // PENDENTE, PAGO, CANCELADO
+	StatusPagamento      null.String `json:"status_pagamento"`          // PENDENTE, PAGO, CANCELADO
 	DataPagamento        null.Time   `json:"data_pagamento,omitempty"`
 	ResponsavelPagamento null.String `json:"responsavel_pagamento,omitempty"`
 	Observacao           null.String `json:"observacao,omitempty"`
