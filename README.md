@@ -24,24 +24,93 @@ Pronto! A API está rodando em `http://localhost:9090` 🎉
 
 ---
 
-## 🛠️ Alterações recentes e notas de migração
+## 🛠️ Alterações recentes e notas de migração (detalhado)
 
-Estas alterações foram identificadas a partir da comparação entre o frontend e a API e implementadas parcialmente via migrations adicionadas ao diretório `migrations/`.
+Este repositório recebeu um conjunto de mudanças para alinhar o backend com necessidades do frontend. As alterações foram aplicadas em código Go (models, services, usecases) e como migrations SQL idempotentes no diretório `migrations/`.
 
-Principais mudanças aplicadas (migrations criadas):
+Resumo das migrations criadas
+- `000017_fix_diario_aprovador.up.sql` — torna `diarios_obra.aprovado_por_id` NULLABLE (quando aplicável) e adiciona uma constraint defensiva `ck_diario_aprovador_status` que valida a relação entre `status_aprovacao` e `aprovado_por_id` (regras: APROVADO → aprovado_por_id NOT NULL; PENDENTE → aprovado_por_id NULL).
+- `000018_rename_data_despesa_to_data_vencimento.up.sql` — renomeia `despesa.data_despesa` para `despesa.data_vencimento` com proteção IF EXISTS para ser idempotente.
+- `000019_add_endereco_pessoa.up.sql` — adiciona colunas de endereço em `pessoa` (rua, numero, complemento, bairro, cidade, estado, cep) usando cláusulas `IF NOT EXISTS`.
+- `000020_add_art_obra.up.sql` — adiciona a coluna `art` na tabela `obra` (nullable, `IF NOT EXISTS`).
 
-- `000017_fix_diario_aprovador.up.sql` — garante que `aprovado_por_id` seja NULLABLE e adiciona uma constraint defensiva que relaciona `status` e `aprovado_por_id` (APROVADO -> aprovado_por_id NOT NULL; PENDENTE -> aprovado_por_id NULL).
-- `000018_rename_data_despesa_to_data_vencimento.up.sql` — renomeia `data_despesa` para `data_vencimento` quando aplicável.
-- `000019_add_endereco_pessoa.up.sql` — adiciona campos de endereço em `pessoa` (`endereco_rua`, `endereco_numero`, `endereco_complemento`, `endereco_bairro`, `endereco_cidade`, `endereco_estado`, `endereco_cep`).
-- `000020_add_art_obra.up.sql` — adiciona o campo `art` na tabela `obra`.
+Arquivos DOWN também foram criados para cada migration (para rollback seguro):
+- `000017_fix_diario_aprovador.down.sql`
+- `000018_rename_data_despesa_to_data_vencimento.down.sql`
+- `000019_add_endereco_pessoa.down.sql`
+- `000020_add_art_obra.down.sql`
 
-Recomendações antes de aplicar migrations em produção:
+Resumo das mudanças de código
+- Models (`internal/models/`): adição de novos campos nulos (`guregu/null`) para:
+  - `Pessoa`: `endereco_rua`, `endereco_numero`, `endereco_complemento`, `endereco_bairro`, `endereco_cidade`, `endereco_estado`, `endereco_cep`.
+  - `Obra`: `art` (nullable)
+  - `Fornecedor`: `contato_nome`, `contato_telefone`, `contato_email` (nullable)
+- Services (`internal/services/`): atualizados para persistir e ler os novos campos (INSERT/SELECT/UPDATE) e corrigir ordens de `Scan`:
+  - `obra.go` — inclui `art` em INSERT/SELECT/UPDATE/RETURNING e ajusta Scans.
+  - `fornecedor.go` — inclui campos de contato em INSERT/SELECT/UPDATE/RETURNING e ajusta Scans.
+  - `despesa.go` — corrigida duplicação/ordem de colunas no `Scan` (alineado com o SELECT e a coluna renomeada `data_vencimento`).
+- Usecases (`internal/usecases/`): validações adicionadas/ajustadas:
+  - `diario.go` — validação: se `status_aprovacao` == APROVADO então `aprovado_por_id` deve estar preenchido; se PENDENTE então `aprovado_por_id` deve ser nulo.
+- Controllers (`internal/controllers/`): não foi necessário alterar o binding JSON (`ShouldBindJSON` já mapeia os novos campos para os modelos). Algumas funções de resposta e mensagens foram alinhadas.
 
-- Faça backup do banco: `docker exec -i db_obras pg_dump -U obras -d obrasdb > /tmp/obrasdb_backup.sql` (ou gz).
-- Rode as migrations em uma janela de manutenção coordenada.
-- Verifique dados inconsistentes antes de aplicar constraints restritivas (ex.: diários com `status = 'PENDENTE'` mas `aprovado_por_id` preenchido). Caso existam, corrija com um `UPDATE` antes de aplicar o CHECK.
+Por que as migrations são idempotentes
+- As migrations usam verificações `IF NOT EXISTS`, renomeações condicionais e blocos PL/pgSQL defensivos. Isso evita erros ao re-executar o mesmo arquivo em um ambiente que já tem as alterações.
 
-Se quiser, o script `run-migrations.sh` já aplica todos os arquivos `migrations/*.up.sql` na ordem; veja a seção `Migrations` mais abaixo.
+Verificações recomendadas antes de aplicar em produção
+1. Backup completo do banco:
+
+```bash
+docker exec -i db_obras pg_dump -U $DB_USER -d $DB_NAME > /tmp/obrasdb_backup_$(date +%F).sql
+```
+
+2. Rodar as migrations primeiro em um ambiente de staging que seja um clone do production.
+3. Antes de aplicar `000017_fix_diario_aprovador`, verifique se existem diários que violam a regra:
+
+```sql
+SELECT id, status_aprovacao, aprovado_por_id FROM diarios_obra WHERE (status_aprovacao ILIKE 'PENDENTE' AND aprovado_por_id IS NOT NULL)
+```
+
+Se existirem resultados, corrija-os (ex.: `UPDATE diarios_obra SET aprovado_por_id = NULL WHERE ...`) ou analise caso a caso.
+
+Checklist de validação pós-migração (manual rápido)
+- Criar/Atualizar/Buscar `Pessoa` com campos de endereço preenchidos.
+- Criar/Atualizar/Buscar `Obra` incluindo `art` e checar retorno.
+- Criar/Atualizar/Buscar `Fornecedor` com `contato_nome/telefone/email`.
+- Criar/Atualizar/Buscar `Despesa` usando `data_vencimento` (antes `data_despesa` em algumas bases antigas).
+- Criar/Atualizar/Buscar `Diário` e testar regras de aprovação (APROVADO x PENDENTE).
+
+Comandos úteis (zsh)
+
+```bash
+# Backup
+docker exec -i db_obras pg_dump -U obras -d obrasdb > /tmp/obrasdb_backup.sql
+
+# Aplicar todas as migrations com o script do projeto (usa docker exec para o container do DB)
+chmod +x run-migrations.sh
+./run-migrations.sh
+
+# Ou rodar com golang-migrate (local)
+migrate -path ./migrations -database "postgresql://obras:7894@localhost:5440/obrasdb?sslmode=disable" up
+
+# Build do projeto (verificar compilação após mudanças)
+go build ./...
+```
+
+Rollback rápido
+- Se precisar reverter a última migration (aplicado com golang-migrate):
+
+```bash
+migrate -path ./migrations -database "postgresql://obras:7894@localhost:5440/obrasdb?sslmode=disable" down 1
+```
+
+Ou execute o arquivo `*.down.sql` correspondente via `docker exec -i db_obras psql`.
+
+Observações finais
+- Controllers continuam a usar `ShouldBindJSON` — os novos campos são mapeados automaticamente para os modelos atualizados.
+- Serviços foram atualizados para garantir persistência/retorno corretos dos novos campos.
+- Ainda pendente: padronização completa de enums/validações, sistema de permissões e notificações, e cobertura de testes automatizados. Essas tarefas estão listadas no TODO do projeto.
+
+Se quiser, eu posso aplicar as migrations neste ambiente (preciso da sua confirmação para criar backup e executar `./run-migrations.sh`) ou abrir um PR com as mudanças para revisão.
 
 
 ## �📋 Índice
