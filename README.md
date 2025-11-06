@@ -1831,6 +1831,372 @@ GET /despesas/relatorio/:obra_id
 
 ---
 
+### 💵 Receitas
+
+#### Listar todas as receitas
+```http
+GET /receitas
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "obra_id": 5,
+      "descricao": "Pagamento inicial da obra",
+      "valor": 50000.00,
+      "data": "2025-11-06",
+      "fonte_receita": "CONTRATO",
+      "numero_documento": "CONTR-2024-001",
+      "responsavel_id": 4,
+      "observacao": "Primeira parcela do contrato",
+      "created_at": "2025-11-06T16:28:24Z",
+      "updated_at": "2025-11-06T16:28:24Z",
+      "obra_nome": "Casa Residencial - Fortaleza",
+      "responsavel_nome": "João Silva"
+    }
+  ]
+}
+```
+
+#### Buscar receita por ID
+```http
+GET /receitas/:id
+```
+
+**Parâmetros:**
+- `id` (path): ID da receita
+
+**Resposta (200 OK):**
+```json
+{
+  "id": 1,
+  "obra_id": 5,
+  "descricao": "Pagamento inicial da obra",
+  "valor": 50000.00,
+  "data": "2025-11-06",
+  "fonte_receita": "CONTRATO",
+  "numero_documento": "CONTR-2024-001",
+  "responsavel_id": 4,
+  "observacao": "Primeira parcela do contrato",
+  "created_at": "2025-11-06T16:28:24Z",
+  "updated_at": "2025-11-06T16:28:24Z",
+  "obra_nome": "Casa Residencial - Fortaleza",
+  "responsavel_nome": "João Silva"
+}
+```
+
+#### Buscar receitas por obra
+```http
+GET /receitas/obra/:obra_id
+```
+
+**Parâmetros:**
+- `obra_id` (path): ID da obra
+
+**Resposta (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "obra_id": 5,
+      "descricao": "Pagamento inicial da obra",
+      "valor": 50000.00,
+      "data": "2025-11-06",
+      "fonte_receita": "CONTRATO",
+      "numero_documento": "CONTR-2024-001",
+      "responsavel_id": 4,
+      "observacao": "Primeira parcela do contrato",
+      "created_at": "2025-11-06T16:28:24Z",
+      "updated_at": "2025-11-06T16:28:24Z",
+      "obra_nome": "Casa Residencial - Fortaleza",
+      "responsavel_nome": "João Silva"
+    }
+  ]
+}
+
+#### Criar nova receita
+```http
+POST /receitas
+```
+
+**Body:**
+```json
+{
+  "obra_id": 5,
+  "fonte_receita": "CONTRATO",
+  "descricao": "Pagamento inicial do contrato",
+  "valor": 50000.00,
+  "data_recebimento": "2025-11-06",
+  "numero_documento": "CONTR-2024-001",
+  "responsavel_id": 4,
+  "observacoes": "Primeira parcela do contrato"
+}
+```
+
+**Resposta (201 Created):**
+```json
+{
+  "message": "Receita criada com sucesso",
+  "data": {
+    "id": 1,
+    "obra_id": 5,
+    "fonte_receita": "CONTRATO",
+    "descricao": "Pagamento inicial do contrato",
+    "valor": 50000.00,
+    "data": "2025-11-06",
+    "numero_documento": "CONTR-2024-001",
+    "responsavel_id": 4,
+    "observacao": "Primeira parcela do contrato",
+    "created_at": "2025-11-06T16:28:24Z",
+    "updated_at": "2025-11-06T16:28:24Z"
+  }
+}
+```
+
+#### Atualizar receita
+```http
+PUT /receitas/:id
+```
+
+**Parâmetros:**
+- `id` (path): ID da receita
+
+**Body:**
+```json
+{
+  "obra_id": 5,
+  "fonte_receita": "CONTRATO",
+  "descricao": "Pagamento inicial do contrato - Atualizado",
+  "valor": 55000.00,
+  "data_recebimento": "2025-11-06",
+  "numero_documento": "CONTR-2024-001-UPDATED",
+  "responsavel_id": 4,
+  "observacoes": "Primeira parcela do contrato com ajuste"
+}
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "id": 1,
+  "obra_id": 5,
+  "fonte_receita": "CONTRATO",
+  "descricao": "Pagamento inicial do contrato - Atualizado",
+  "valor": 55000.00,
+  "data": "2025-11-06",
+  "numero_documento": "CONTR-2024-001-UPDATED",
+  "responsavel_id": 4,
+  "observacao": "Primeira parcela do contrato com ajuste",
+  "created_at": "2025-11-06T16:28:24Z",
+  "updated_at": "2025-11-06T17:30:15Z"
+}
+```
+
+#### Deletar receita
+```http
+DELETE /receitas/:id
+```
+
+**Parâmetros:**
+- `id` (path): ID da receita
+
+**Resposta (204 No Content):**
+```
+(sem corpo de resposta)
+```
+
+**Resposta de Erro (404 Not Found):**
+```json
+{
+  "error": "Receita não encontrada"
+}
+```
+
+**Fontes de Receita:**
+- `CONTRATO` - Pagamentos contratuais
+- `PAGAMENTO_CLIENTE` - Pagamentos de clientes
+- `ADIANTAMENTO` - Adiantamentos recebidos
+- `FINANCIAMENTO` - Financiamentos obtidos
+- `MEDICAO` - Pagamentos por medição
+- `OUTROS` - Outras receitas
+
+---
+
+### 📊 Relatórios
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `GET` | `/relatorios/obra/:obra_id` | Relatório financeiro completo da obra |
+| `GET` | `/relatorios/despesas/:obra_id` | Despesas agrupadas por categoria |
+| `GET` | `/relatorios/pagamentos/:obra_id` | Status de pagamentos e atrasos |
+| `GET` | `/relatorios/materiais/:obra_id` | Relatório de materiais consumidos |
+| `GET` | `/relatorios/profissionais/:obra_id` | Relatório de mão de obra |
+
+#### Relatório de Obra
+```http
+GET /relatorios/obra/:obra_id
+```
+
+**Descrição:** Relatório financeiro completo da obra com orçamento vs gasto vs receita.
+
+**Resposta (200 OK):**
+```json
+{
+  "data": {
+    "obra_id": 5,
+    "obra_nome": "Casa Residencial - Fortaleza",
+    "orcamento_previsto": 0,
+    "gasto_realizado": 1750,
+    "receita_total": 50000,
+    "saldo_atual": 48250,
+    "pagamento_pendente": 2700.5,
+    "status": "EM_ANDAMENTO",
+    "percentual_executado": 3.5,
+    "percentual_lucro": 96.5,
+    "total_despesas": 5,
+    "total_receitas": 1
+  }
+}
+```
+
+#### Relatório de Despesas por Categoria
+```http
+GET /relatorios/despesas/:obra_id
+```
+
+**Descrição:** Despesas agrupadas por categoria com totais e percentuais.
+
+**Resposta (200 OK):**
+```json
+{
+  "data": {
+    "obra_id": 5,
+    "obra_nome": "Casa Residencial - Fortaleza",
+    "total_geral": 4450.5,
+    "categorias": [
+      {
+        "categoria": "MATERIAL",
+        "total": 3500.5,
+        "percentual": 78.6,
+        "quantidade_itens": 2
+      },
+      {
+        "categoria": "MAO_DE_OBRA", 
+        "total": 750,
+        "percentual": 16.9,
+        "quantidade_itens": 1
+      },
+      {
+        "categoria": "OUTROS",
+        "total": 200,
+        "percentual": 4.5,
+        "quantidade_itens": 1
+      }
+    ]
+  }
+}
+```
+
+#### Relatório de Pagamentos
+```http
+GET /relatorios/pagamentos/:obra_id?status=PENDENTE
+```
+
+**Parâmetros Query (opcionais):**
+- `status` - Filtrar por status: `PENDENTE`, `PAGO`, `VENCIDO`
+
+**Descrição:** Status de pagamentos com dias de atraso e formas de pagamento.
+
+**Resposta (200 OK):**
+```json
+{
+  "data": {
+    "obra_id": 5,
+    "total_pendente": 2700.5,
+    "total_pago": 1750,
+    "pagamentos_em_atraso": 1,
+    "pagamentos": [
+      {
+        "id": 3,
+        "descricao": "Ferro 10mm - 50 barras",
+        "valor": 2500.5,
+        "status_pagamento": "PENDENTE",
+        "forma_pagamento": "BOLETO",
+        "data_vencimento": "2025-11-03",
+        "dias_atraso": 3,
+        "fornecedor_nome": "Distribuidora ABC"
+      }
+    ]
+  }
+}
+```
+
+#### Relatório de Materiais
+```http
+GET /relatorios/materiais/:obra_id
+```
+
+**Descrição:** Total gasto em materiais, quantidade de itens e maior gasto.
+
+**Resposta (200 OK):**
+```json
+{
+  "data": {
+    "total_materiais": 3500.5,
+    "quantidade_itens": 2,
+    "maior_gasto_valor": 2500.5,
+    "maior_gasto_descricao": "Ferro 10mm - 50 barras",
+    "materiais": [
+      {
+        "descricao": "Ferro 10mm - 50 barras",
+        "valor": 2500.5,
+        "data": "2025-11-06",
+        "fornecedor": "Distribuidora ABC"
+      },
+      {
+        "descricao": "Cimento CP-II 50kg - 20 sacos",
+        "valor": 1000,
+        "data": "2025-11-06", 
+        "fornecedor": "Materiais Silva"
+      }
+    ]
+  }
+}
+```
+
+#### Relatório de Profissionais
+```http
+GET /relatorios/profissionais/:obra_id
+```
+
+**Descrição:** Total de mão de obra, quantidade de pagamentos e maior pagamento.
+
+**Resposta (200 OK):**
+```json
+{
+  "data": {
+    "total_mao_obra": 750,
+    "quantidade_pagamentos": 1,
+    "maior_pagamento_valor": 750,
+    "maior_pagamento_descricao": "Pedreiro 5 dias",
+    "profissionais": [
+      {
+        "descricao": "Pedreiro 5 dias",
+        "valor": 750,
+        "data": "2025-11-06",
+        "responsavel": "João da Silva"
+      }
+    ]
+  }
+}
+```
+
+---
+
 ## 📂 Estrutura do Projeto
 
 ```
@@ -2235,7 +2601,92 @@ docker compose up -d
 
 ---
 
-## � Resumo de Rotas da API
+## 📋 Resumo Completo de Endpoints
+
+### 🔐 Autenticação (Públicas)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `POST` | `/login` | Login e geração de tokens JWT |
+| `POST` | `/refresh` | Renovar access token |
+| `POST` | `/usuarios` | Cadastrar novo usuário |
+
+### 👥 Pessoas (Protegidas)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `GET` | `/pessoas` | Listar todas as pessoas |
+| `GET` | `/pessoas/:id` | Buscar pessoa por ID |
+| `POST` | `/pessoas` | Criar nova pessoa |
+| `PUT` | `/pessoas/:id` | Atualizar pessoa |
+| `DELETE` | `/pessoas/:id` | Deletar pessoa |
+
+### 👤 Usuários (Protegidas)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `GET` | `/usuarios` | Listar todos os usuários |
+| `GET` | `/usuarios/:id` | Buscar usuário por ID |
+| `PUT` | `/usuarios/:id` | Atualizar usuário |
+| `DELETE` | `/usuarios/:id` | Deletar usuário |
+
+### 🏗️ Obras (Protegidas)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `GET` | `/obras` | Listar todas as obras |
+| `GET` | `/obras/:id` | Buscar obra por ID |
+| `POST` | `/obras` | Criar nova obra |
+| `PUT` | `/obras/:id` | Atualizar obra |
+| `DELETE` | `/obras/:id` | Deletar obra |
+
+### 📖 Diários de Obra (Protegidas)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `GET` | `/diarios` | Listar todos os diários |
+| `GET` | `/diarios/:id` | Buscar diário por ID |
+| `GET` | `/diarios/obra/:id` | Buscar diários por obra |
+| `POST` | `/diarios` | Criar novo diário (com suporte a foto base64) |
+| `PUT` | `/diarios/:id` | Atualizar diário |
+| `DELETE` | `/diarios/:id` | Deletar diário |
+
+### 🏪 Fornecedores (Protegidas)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `GET` | `/fornecedores` | Listar todos os fornecedores |
+| `GET` | `/fornecedores/:id` | Buscar fornecedor por ID |
+| `POST` | `/fornecedores` | Criar novo fornecedor |
+| `PUT` | `/fornecedores/:id` | Atualizar fornecedor |
+| `DELETE` | `/fornecedores/:id` | Deletar fornecedor |
+
+### 💰 Despesas (Protegidas)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `GET` | `/despesas` | Listar todas as despesas |
+| `GET` | `/despesas/:id` | Buscar despesa por ID |
+| `GET` | `/despesas/relatorio/:obra_id` | Relatório de despesas por obra |
+| `POST` | `/despesas` | Criar nova despesa |
+| `PUT` | `/despesas/:id` | Atualizar despesa |
+| `DELETE` | `/despesas/:id` | Deletar despesa |
+
+### 💵 Receitas (Protegidas)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `GET` | `/receitas` | Listar todas as receitas |
+| `GET` | `/receitas/:id` | Buscar receita por ID |
+| `GET` | `/receitas/obra/:obra_id` | Buscar receitas por obra |
+| `POST` | `/receitas` | Criar nova receita |
+| `PUT` | `/receitas/:id` | Atualizar receita |
+| `DELETE` | `/receitas/:id` | Deletar receita |
+
+### 📊 Relatórios (Protegidas)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `GET` | `/relatorios/obra/:obra_id` | Relatório financeiro completo da obra |
+| `GET` | `/relatorios/despesas/:obra_id` | Despesas agrupadas por categoria |
+| `GET` | `/relatorios/pagamentos/:obra_id` | Status de pagamentos e atrasos |
+| `GET` | `/relatorios/materiais/:obra_id` | Relatório de materiais consumidos |
+| `GET` | `/relatorios/profissionais/:obra_id` | Relatório de mão de obra |
+
+**Total de Endpoints:** 52 endpoints (3 públicos + 49 protegidos)
+
+---
 
 | Método | Endpoint | Autenticação | Descrição |
 |--------|----------|--------------|-----------|
