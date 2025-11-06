@@ -1,0 +1,1 @@
+ALTER TABLE diario_obra ADD COLUMN foto TEXT;

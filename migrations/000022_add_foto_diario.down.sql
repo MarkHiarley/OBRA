@@ -1,0 +1,1 @@
+ALTER TABLE diario_obra DROP COLUMN IF EXISTS foto;

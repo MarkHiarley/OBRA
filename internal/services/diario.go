@@ -22,8 +22,8 @@ func NewDiarioService(connection *sql.DB) DiarioServices {
 func (pr *DiarioServices) CreateDiario(diario models.DiarioObra) (int64, error) {
 	var id int
 
-	query := `INSERT INTO diario_obra (obra_id, data, periodo, atividades_realizadas, ocorrencias, observacoes, responsavel_id, aprovado_por_id, status_aprovacao) 
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+	query := `INSERT INTO diario_obra (obra_id, data, periodo, atividades_realizadas, ocorrencias, observacoes, responsavel_id, aprovado_por_id, status_aprovacao, foto) 
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
               RETURNING id`
 
 	// Converter null.Int para interface{} tratando NULL corretamente
@@ -41,6 +41,13 @@ func (pr *DiarioServices) CreateDiario(diario models.DiarioObra) (int64, error) 
 		aprovadoPorID = nil
 	}
 
+	var foto interface{}
+	if diario.Foto.Valid {
+		foto = diario.Foto.String
+	} else {
+		foto = nil
+	}
+
 	err := pr.connection.QueryRow(query,
 		diario.ObraID.Int64,
 		diario.Data.String,
@@ -50,7 +57,8 @@ func (pr *DiarioServices) CreateDiario(diario models.DiarioObra) (int64, error) 
 		diario.Observacoes.String,
 		responsavelID,
 		aprovadoPorID,
-		diario.StatusAprovacao.String).Scan(&id)
+		diario.StatusAprovacao.String,
+		foto).Scan(&id)
 
 	if err != nil {
 		fmt.Printf("Erro ao criar diario: %v\n", err)
@@ -62,7 +70,7 @@ func (pr *DiarioServices) CreateDiario(diario models.DiarioObra) (int64, error) 
 
 func (pr *DiarioServices) GetDiarios() ([]models.DiarioObra, error) {
 
-	query := "select id, obra_id, data, periodo, atividades_realizadas, ocorrencias, observacoes, responsavel_id, aprovado_por_id, status_aprovacao, created_at, update_at from diario_obra"
+	query := "select id, obra_id, data, periodo, atividades_realizadas, ocorrencias, observacoes, responsavel_id, aprovado_por_id, status_aprovacao, created_at, update_at, foto from diario_obra"
 	rows, err := pr.connection.Query(query)
 	if err != nil {
 		fmt.Println(err)
@@ -86,6 +94,7 @@ func (pr *DiarioServices) GetDiarios() ([]models.DiarioObra, error) {
 			&diariosObj.StatusAprovacao,
 			&diariosObj.CreatedAt,
 			&diariosObj.UpdatedAt,
+			&diariosObj.Foto,
 		)
 
 		if err != nil {
@@ -104,7 +113,7 @@ func (pr *DiarioServices) GetDiarios() ([]models.DiarioObra, error) {
 func (pr DiarioServices) GetDiarioById(id int64) (models.DiarioObra, error) {
 
 	//id, nome, email, tipo_documento, documento, telefone, perfil_acesso, ativo, created_at, updated_at
-	query := "select id, obra_id, data, periodo, atividades_realizadas, ocorrencias, observacoes, responsavel_id,aprovado_por_id, status_aprovacao, created_at, update_at from diario_obra where id = $1"
+	query := "select id, obra_id, data, periodo, atividades_realizadas, ocorrencias, observacoes, responsavel_id,aprovado_por_id, status_aprovacao, created_at, update_at, foto from diario_obra where id = $1"
 
 	row := pr.connection.QueryRow(query, id)
 
@@ -123,6 +132,7 @@ func (pr DiarioServices) GetDiarioById(id int64) (models.DiarioObra, error) {
 		&diario.StatusAprovacao,
 		&diario.CreatedAt,
 		&diario.UpdatedAt,
+		&diario.Foto,
 	)
 
 	if err != nil {
@@ -140,7 +150,7 @@ func (pr DiarioServices) GetDiarioById(id int64) (models.DiarioObra, error) {
 
 func (pr DiarioServices) GetDiarioByObraId(id int64) ([]models.DiarioObra, error) {
 
-	query := "select id, obra_id, data, periodo, atividades_realizadas, ocorrencias, observacoes, responsavel_id, aprovado_por_id, status_aprovacao, created_at, update_at from diario_obra where obra_id = $1"
+	query := "select id, obra_id, data, periodo, atividades_realizadas, ocorrencias, observacoes, responsavel_id, aprovado_por_id, status_aprovacao, created_at, update_at, foto from diario_obra where obra_id = $1"
 	rows, err := pr.connection.Query(query, id)
 	if err != nil {
 		fmt.Println(err)
@@ -164,6 +174,7 @@ func (pr DiarioServices) GetDiarioByObraId(id int64) ([]models.DiarioObra, error
 			&diariosObj.StatusAprovacao,
 			&diariosObj.CreatedAt,
 			&diariosObj.UpdatedAt,
+			&diariosObj.Foto,
 		)
 
 		if err != nil {
@@ -194,9 +205,10 @@ func (pr DiarioServices) PutDiarios(id int, diarioToUpdate models.DiarioObra) (m
             responsavel_id = $7,
             aprovado_por_id = $8,
             status_aprovacao = $9,
-			update_at =$10
-		WHERE id = $11
-		RETURNING id, obra_id, data, periodo, atividades_realizadas, ocorrencias, observacoes, responsavel_id, aprovado_por_id, status_aprovacao, created_at, update_at`
+			update_at = $10,
+			foto = $11
+		WHERE id = $12
+		RETURNING id, obra_id, data, periodo, atividades_realizadas, ocorrencias, observacoes, responsavel_id, aprovado_por_id, status_aprovacao, created_at, update_at, foto`
 
 	var updatedDiario models.DiarioObra
 
@@ -215,6 +227,13 @@ func (pr DiarioServices) PutDiarios(id int, diarioToUpdate models.DiarioObra) (m
 		aprovadoPorID = nil
 	}
 
+	var foto interface{}
+	if diarioToUpdate.Foto.Valid {
+		foto = diarioToUpdate.Foto.String
+	} else {
+		foto = nil
+	}
+
 	err := pr.connection.QueryRowContext(context.Background(), query,
 		diarioToUpdate.ObraID,
 		diarioToUpdate.Data,
@@ -226,6 +245,7 @@ func (pr DiarioServices) PutDiarios(id int, diarioToUpdate models.DiarioObra) (m
 		aprovadoPorID,
 		diarioToUpdate.StatusAprovacao,
 		time.Now(),
+		foto,
 		id, // The ID for the WHERE clause
 	).Scan(
 
@@ -241,6 +261,7 @@ func (pr DiarioServices) PutDiarios(id int, diarioToUpdate models.DiarioObra) (m
 		&updatedDiario.StatusAprovacao,
 		&updatedDiario.CreatedAt,
 		&updatedDiario.UpdatedAt,
+		&updatedDiario.Foto,
 	)
 
 	if err != nil {

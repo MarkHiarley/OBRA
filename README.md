@@ -1,22 +1,25 @@
 # 🏗️ OBRA - Sistema de Gerenciamento de Obras
 
-API RESTful para gerenciamento de obras, construída em Go com Gin Framework e PostgreSQL.
+API RESTful para gerenciamento completo de obras, construída em Go com Gin Framework e PostgreSQL.
 
-## � Quick Start
+## 🚀 Quick Start
 
 ```bash
 # 1. Clone e configure
 git clone https://github.com/MarkHiarley/OBRA.git
 cd OBRA
 
-# 2. Inicie os containers
+# 2. Configure as variáveis de ambiente
+cp .env.example .env
+
+# 3. Inicie os containers
 docker compose up -d
 
-# 3. Execute as migrations
+# 4. Execute as migrations
 chmod +x run-migrations.sh
 ./run-migrations.sh
 
-# 4. Acesse a API
+# 5. Acesse a API
 curl http://localhost:9090/pessoas
 ```
 
@@ -24,310 +27,420 @@ Pronto! A API está rodando em `http://localhost:9090` 🎉
 
 ---
 
-## 🛠️ Alterações recentes e notas de migração (detalhado)
+## � Funcionalidades
 
-Este repositório recebeu um conjunto de mudanças para alinhar o backend com necessidades do frontend. As alterações foram aplicadas em código Go (models, services, usecases) e como migrations SQL idempotentes no diretório `migrations/`.
+O sistema OBRA oferece controle completo de obras com:
 
-Resumo das migrations criadas
-- `000017_fix_diario_aprovador.up.sql` — torna `diarios_obra.aprovado_por_id` NULLABLE (quando aplicável) e adiciona uma constraint defensiva `ck_diario_aprovador_status` que valida a relação entre `status_aprovacao` e `aprovado_por_id` (regras: APROVADO → aprovado_por_id NOT NULL; PENDENTE → aprovado_por_id NULL).
-- `000018_rename_data_despesa_to_data_vencimento.up.sql` — renomeia `despesa.data_despesa` para `despesa.data_vencimento` com proteção IF EXISTS para ser idempotente.
-- `000019_add_endereco_pessoa.up.sql` — adiciona colunas de endereço em `pessoa` (rua, numero, complemento, bairro, cidade, estado, cep) usando cláusulas `IF NOT EXISTS`.
-- `000020_add_art_obra.up.sql` — adiciona a coluna `art` na tabela `obra` (nullable, `IF NOT EXISTS`).
-
-Arquivos DOWN também foram criados para cada migration (para rollback seguro):
-- `000017_fix_diario_aprovador.down.sql`
-- `000018_rename_data_despesa_to_data_vencimento.down.sql`
-- `000019_add_endereco_pessoa.down.sql`
-- `000020_add_art_obra.down.sql`
-
-Resumo das mudanças de código
-- Models (`internal/models/`): adição de novos campos nulos (`guregu/null`) para:
-  - `Pessoa`: `endereco_rua`, `endereco_numero`, `endereco_complemento`, `endereco_bairro`, `endereco_cidade`, `endereco_estado`, `endereco_cep`.
-  - `Obra`: `art` (nullable)
-  - `Fornecedor`: `contato_nome`, `contato_telefone`, `contato_email` (nullable)
-- Services (`internal/services/`): atualizados para persistir e ler os novos campos (INSERT/SELECT/UPDATE) e corrigir ordens de `Scan`:
-  - `obra.go` — inclui `art` em INSERT/SELECT/UPDATE/RETURNING e ajusta Scans.
-  - `fornecedor.go` — inclui campos de contato em INSERT/SELECT/UPDATE/RETURNING e ajusta Scans.
-  - `despesa.go` — corrigida duplicação/ordem de colunas no `Scan` (alineado com o SELECT e a coluna renomeada `data_vencimento`).
-- Usecases (`internal/usecases/`): validações adicionadas/ajustadas:
-  - `diario.go` — validação: se `status_aprovacao` == APROVADO então `aprovado_por_id` deve estar preenchido; se PENDENTE então `aprovado_por_id` deve ser nulo.
-- Controllers (`internal/controllers/`): não foi necessário alterar o binding JSON (`ShouldBindJSON` já mapeia os novos campos para os modelos). Algumas funções de resposta e mensagens foram alinhadas.
-
-Por que as migrations são idempotentes
-- As migrations usam verificações `IF NOT EXISTS`, renomeações condicionais e blocos PL/pgSQL defensivos. Isso evita erros ao re-executar o mesmo arquivo em um ambiente que já tem as alterações.
-
-Verificações recomendadas antes de aplicar em produção
-1. Backup completo do banco:
-
-```bash
-docker exec -i db_obras pg_dump -U $DB_USER -d $DB_NAME > /tmp/obrasdb_backup_$(date +%F).sql
-```
-
-2. Rodar as migrations primeiro em um ambiente de staging que seja um clone do production.
-3. Antes de aplicar `000017_fix_diario_aprovador`, verifique se existem diários que violam a regra:
-
-```sql
-SELECT id, status_aprovacao, aprovado_por_id FROM diarios_obra WHERE (status_aprovacao ILIKE 'PENDENTE' AND aprovado_por_id IS NOT NULL)
-```
-
-Se existirem resultados, corrija-os (ex.: `UPDATE diarios_obra SET aprovado_por_id = NULL WHERE ...`) ou analise caso a caso.
-
-Checklist de validação pós-migração (manual rápido)
-- Criar/Atualizar/Buscar `Pessoa` com campos de endereço preenchidos.
-- Criar/Atualizar/Buscar `Obra` incluindo `art` e checar retorno.
-- Criar/Atualizar/Buscar `Fornecedor` com `contato_nome/telefone/email`.
-- Criar/Atualizar/Buscar `Despesa` usando `data_vencimento` (antes `data_despesa` em algumas bases antigas).
-- Criar/Atualizar/Buscar `Diário` e testar regras de aprovação (APROVADO x PENDENTE).
-
-Comandos úteis (zsh)
-
-```bash
-# Backup
-docker exec -i db_obras pg_dump -U obras -d obrasdb > /tmp/obrasdb_backup.sql
-
-# Aplicar todas as migrations com o script do projeto (usa docker exec para o container do DB)
-chmod +x run-migrations.sh
-./run-migrations.sh
-
-# Ou rodar com golang-migrate (local)
-migrate -path ./migrations -database "postgresql://obras:7894@localhost:5440/obrasdb?sslmode=disable" up
-
-# Build do projeto (verificar compilação após mudanças)
-go build ./...
-```
-
-Rollback rápido
-- Se precisar reverter a última migration (aplicado com golang-migrate):
-
-```bash
-migrate -path ./migrations -database "postgresql://obras:7894@localhost:5440/obrasdb?sslmode=disable" down 1
-```
-
-Ou execute o arquivo `*.down.sql` correspondente via `docker exec -i db_obras psql`.
-
-Observações finais
-- Controllers continuam a usar `ShouldBindJSON` — os novos campos são mapeados automaticamente para os modelos atualizados.
-- Serviços foram atualizados para garantir persistência/retorno corretos dos novos campos.
-- Ainda pendente: padronização completa de enums/validações, sistema de permissões e notificações, e cobertura de testes automatizados. Essas tarefas estão listadas no TODO do projeto.
-
-Se quiser, eu posso aplicar as migrations neste ambiente (preciso da sua confirmação para criar backup e executar `./run-migrations.sh`) ou abrir um PR com as mudanças para revisão.
-
-
-## �📋 Índice
-
-- [Sobre o Projeto](#sobre-o-projeto)
-- [Tecnologias](#tecnologias)
-- [Arquitetura](#arquitetura)
-- [Pré-requisitos](#pré-requisitos)
-- [Instalação](#instalação)
-- [Configuração](#configuração)
-- [Executando o Projeto](#executando-o-projeto)
-- [Documentação da API](#documentação-da-api)
-  - [Pessoas](#pessoas)
-  - [Usuários](#usuários)
-  - [Obras](#obras)
-  - [Diários de Obra](#diários-de-obra)
-  - [Fornecedores](#fornecedores)
-  - [Despesas](#despesas)
-- [Estrutura do Projeto](#estrutura-do-projeto)
-- [Migrations](#migrations)
+- **🔐 Autenticação JWT** - Login seguro com tokens de acesso
+- **👥 Pessoas** - Cadastro de profissionais e contratantes
+- **👤 Usuários** - Gestão de acesso ao sistema
+- **🏗️ Obras** - Controle de projetos e contratos
+- **📖 Diários de Obra** - Registro diário com suporte a fotos base64
+- **🏪 Fornecedores** - Cadastro de empresas e prestadores
+- **💰 Despesas** - Controle financeiro por categoria
+- **💵 Receitas** - Gestão de entradas e receitas das obras
+- **📊 Relatórios** - Dashboards financeiros e operacionais completos
 
 ---
 
-## 🎯 Sobre o Projeto
+## 🛠️ Tecnologias
 
-O sistema OBRA é uma solução completa para gerenciamento de obras, permitindo o controle de:
-
-- **Pessoas**: Cadastro de profissionais envolvidos nas obras
-- **Usuários**: Gestão de acesso ao sistema com perfis diferenciados
-- **Obras**: Controle completo de projetos, contratos e prazos
-- **Diários de Obra**: Registro diário de atividades, ocorrências e aprovações
-- **Fornecedores**: Cadastro de empresas e prestadores de serviços
-- **Despesas**: Controle financeiro de gastos por obra e categoria
+- **Go 1.25** + **Gin Framework**
+- **PostgreSQL 12**
+- **Docker & Docker Compose**
+- **JWT Authentication**
+- **Clean Architecture**
 
 ---
 
-## 🚀 Tecnologias
+## ⚙️ Instalação
 
-- **[Go 1.25](https://golang.org/)** - Linguagem de programação
-- **[Gin](https://github.com/gin-gonic/gin)** - Framework web HTTP
-- **[PostgreSQL 12](https://www.postgresql.org/)** - Banco de dados relacional
-- **[Docker](https://www.docker.com/)** - Containerização
-- **[Docker Compose](https://docs.docker.com/compose/)** - Orquestração de containers
-- **[golang-migrate](https://github.com/golang-migrate/migrate)** - Migrations de banco de dados
-
----
-
-## 🏛️ Arquitetura
-
-O projeto segue a **Clean Architecture** com separação clara de responsabilidades:
-
-```
-┌─────────────┐
-│ Controllers │  ← Camada de apresentação (HTTP handlers)
-└──────┬──────┘
-       │
-┌──────▼──────┐
-│  Use Cases  │  ← Lógica de negócio
-└──────┬──────┘
-       │
-┌──────▼──────┐
-│  Services   │  ← Acesso a dados
-└──────┬──────┘
-       │
-┌──────▼──────┐
-│   Models    │  ← Estruturas de dados
-└─────────────┘
-```
-
----
-
-## 📦 Pré-requisitos
-
+### Pré-requisitos
 - Docker >= 20.10
 - Docker Compose >= 2.0
-- Make (opcional, para comandos facilitados)
 
----
+### Configuração
 
-## 💻 Instalação
-
-### 1. Clone o repositório
-
+1. **Clone o repositório:**
 ```bash
 git clone https://github.com/MarkHiarley/OBRA.git
 cd OBRA
 ```
 
-### 2. Configure as variáveis de ambiente
-
-Crie um arquivo `.env` na raiz do projeto:
-
+2. **Configure o ambiente:**
 ```bash
-cp .env.example .env
-```
-
-Ou crie manualmente com o seguinte conteúdo:
-
-```env
-# Database Configuration
+# Crie o arquivo .env com suas configurações
+cat > .env << EOF
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=obras
-DB_PASSWORD=sua_senha_aqui
+DB_PASSWORD=7894
 DB_NAME=obrasdb
-
-# Database Host Port (for local development)
 DB_HOST_PORT=5440
-
-# API Configuration
 API_PORT=9090
+SECRET_KEY_JWT=OBRAS
+EOF
 ```
 
-> ⚠️ **Importante para Docker**: 
-> - As variáveis `DB_HOST` e `DB_PORT` são sobrescritas automaticamente no `docker-compose.yml`
-> - No container, `DB_HOST=db_obras` e `DB_PORT=5432` (porta interna do container)
-> - Para desenvolvimento local (sem Docker), use `DB_HOST=localhost` e `DB_PORT=5432`
-> - `DB_HOST_PORT=5440` é a porta exposta no seu computador para acesso externo ao banco
-
----
-
-## 🎮 Configuração
-
-### Variáveis de Ambiente
-
-| Variável | Descrição | Valor Docker | Valor Local |
-|----------|-----------|--------------|-------------|
-| `DB_HOST` | Host do banco de dados | `db_obras` (auto) | `localhost` |
-| `DB_PORT` | Porta do PostgreSQL | `5432` (auto) | `5432` |
-| `DB_USER` | Usuário do banco | `obras` | `obras` |
-| `DB_PASSWORD` | Senha do banco | - | - |
-| `DB_NAME` | Nome do banco de dados | `obrasdb` | `obrasdb` |
-| `DB_HOST_PORT` | Porta exposta no host | `5440` | N/A |
-| `API_PORT` | Porta da API | `9090` | `9090` |
-
-> 💡 **Dica**: O `docker-compose.yml` configura automaticamente `DB_HOST=db_obras` e `DB_PORT=5432` para comunicação entre containers
-
----
-
-## 🚀 Executando o Projeto
-
-### Usando Docker Compose (Recomendado)
-
+3. **Inicie a aplicação:**
 ```bash
-# 1. Iniciar todos os serviços
+# Subir containers
 docker compose up -d
 
-# 2. Aguardar o banco inicializar (cerca de 5-10 segundos)
+# Aguardar banco inicializar
 sleep 10
 
-# 3. Executar as migrations
-./run-migrations.sh
-
-# 4. Ver logs da API
-docker logs api_obras -f
-
-# 5. Ver logs do banco
-docker logs db_obras -f
-
-# Parar os serviços
-docker compose down
-
-# Reconstruir e iniciar (após mudanças no código)
-docker compose down
-docker compose up -d --build
-./run-migrations.sh
-```
-
-### Fluxo Completo de Inicialização
-
-```bash
-# Passo 1: Subir os containers
-docker compose up -d
-
-# Passo 2: Executar migrations (script pronto)
+# Executar migrations
 chmod +x run-migrations.sh
 ./run-migrations.sh
 
-# Passo 3: Verificar se a API está rodando
+# Verificar logs
 docker logs api_obras
-
-# Passo 4: Testar a API
-curl http://localhost:9090/pessoas
 ```
 
-### Usando Make
+### Acessos
 
+- **API**: http://localhost:9090
+- **PostgreSQL**: localhost:5440 (user: obras, pass: 7894, db: obrasdb)
+
+---
+
+## 📚 Documentação da API
+
+### 🔐 Autenticação
+
+#### Login
+```http
+POST /login
+Content-Type: application/json
+
+{
+  "email": "admin@obras.com",
+  "senha": "admin123"
+}
+```
+
+**Resposta:**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIs...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIs..."
+}
+```
+
+#### Usar Token
 ```bash
-# Iniciar o projeto
-make run
-
-# Ver outros comandos disponíveis
-make help
+# Todas as rotas protegidas requerem o header:
+Authorization: Bearer <access_token>
 ```
 
-### Acessar a API
+#### Renovar Token
+```http
+POST /refresh
+Content-Type: application/json
 
-Após iniciar, a API estará disponível em:
-
+{
+  "refresh_token": "eyJhbGciOiJIUzI1NiIs..."
+}
 ```
-http://localhost:9090
+
+---
+
+### 👥 Pessoas
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `GET` | `/pessoas` | Listar todas as pessoas |
+| `GET` | `/pessoas/:id` | Buscar pessoa por ID |
+| `POST` | `/pessoas` | Criar nova pessoa |
+| `PUT` | `/pessoas/:id` | Atualizar pessoa |
+| `DELETE` | `/pessoas/:id` | Deletar pessoa |
+
+**Exemplo - Criar Pessoa:**
+```http
+POST /pessoas
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "nome": "João Silva",
+  "tipo": "CPF",
+  "documento": "123.456.789-00",
+  "email": "joao@exemplo.com",
+  "telefone": "(11) 98765-4321",
+  "cargo": "Engenheiro Civil",
+  "endereco_rua": "Av. Principal, 1000",
+  "endereco_cidade": "São Paulo",
+  "endereco_estado": "SP",
+  "endereco_cep": "01000-000",
+  "ativo": true
+}
 ```
 
-### Acessar o Banco de Dados
+---
 
-Para conectar ao PostgreSQL externamente:
+### 👤 Usuários
 
+| Método | Endpoint | Descrição | Autenticação |
+|--------|----------|-----------|--------------|
+| `POST` | `/usuarios` | Cadastrar usuário | ❌ Público |
+| `GET` | `/usuarios` | Listar usuários | ✅ Protegido |
+| `GET` | `/usuarios/:id` | Buscar usuário por ID | ✅ Protegido |
+| `PUT` | `/usuarios/:id` | Atualizar usuário | ✅ Protegido |
+| `DELETE` | `/usuarios/:id` | Deletar usuário | ✅ Protegido |
+
+---
+
+### 🏗️ Obras
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `GET` | `/obras` | Listar todas as obras |
+| `GET` | `/obras/:id` | Buscar obra por ID |
+| `POST` | `/obras` | Criar nova obra |
+| `PUT` | `/obras/:id` | Atualizar obra |
+| `DELETE` | `/obras/:id` | Deletar obra |
+
+---
+
+### 📖 Diários de Obra
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `GET` | `/diarios` | Listar todos os diários |
+| `GET` | `/diarios/:id` | Buscar diário por ID |
+| `GET` | `/diarios/obra/:id` | Buscar diários por obra |
+| `POST` | `/diarios` | Criar novo diário |
+| `PUT` | `/diarios/:id` | Atualizar diário |
+| `DELETE` | `/diarios/:id` | Deletar diário |
+
+**🖼️ Suporte a Fotos:**
+```json
+{
+  "obra_id": 1,
+  "data": "2025-11-06",
+  "periodo": "manha",
+  "atividades_realizadas": "Concretagem da laje",
+  "foto": "data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
+  "responsavel_id": 4,
+  "status_aprovacao": "pendente",
+  "clima": "ENSOLARADO"
+}
+```
+
+**Validações:**
+- **Período**: `manha`, `tarde`, `noite`, `integral`
+- **Clima**: `ENSOLARADO`, `NUBLADO`, `CHUVOSO`, `VENTOSO`, `OUTROS`
+- **Status**: `pendente`, `aprovado`, `rejeitado`
+
+---
+
+### 🏪 Fornecedores
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `GET` | `/fornecedores` | Listar fornecedores |
+| `GET` | `/fornecedores/:id` | Buscar fornecedor por ID |
+| `POST` | `/fornecedores` | Criar fornecedor |
+| `PUT` | `/fornecedores/:id` | Atualizar fornecedor |
+| `DELETE` | `/fornecedores/:id` | Deletar fornecedor |
+
+---
+
+### � Despesas
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `GET` | `/despesas` | Listar despesas |
+| `GET` | `/despesas/:id` | Buscar despesa por ID |
+| `GET` | `/despesas/relatorio/:obra_id` | Relatório de despesas por obra |
+| `POST` | `/despesas` | Criar despesa |
+| `PUT` | `/despesas/:id` | Atualizar despesa |
+| `DELETE` | `/despesas/:id` | Deletar despesa |
+
+**Categorias:** `MATERIAL`, `MAO_DE_OBRA`, `TRANSPORTE`, `EQUIPAMENTO`, `ALIMENTACAO`, `OUTROS`
+**Formas de Pagamento:** `PIX`, `BOLETO`, `CARTAO_CREDITO`, `TRANSFERENCIA`, `DINHEIRO`
+**Status:** `PENDENTE`, `PAGO`, `VENCIDO`, `CANCELADO`
+
+---
+
+### 💵 Receitas
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `GET` | `/receitas` | Listar todas as receitas |
+| `GET` | `/receitas/:id` | Buscar receita por ID |
+| `GET` | `/receitas/obra/:obra_id` | Buscar receitas por obra |
+| `POST` | `/receitas` | Criar nova receita |
+| `PUT` | `/receitas/:id` | Atualizar receita |
+| `DELETE` | `/receitas/:id` | Deletar receita |
+
+**Exemplo - Criar Receita:**
+```http
+POST /receitas
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "obra_id": 5,
+  "fonte_receita": "CONTRATO",
+  "descricao": "Pagamento inicial do contrato",
+  "valor": 50000.00,
+  "data_recebimento": "2025-11-06",
+  "responsavel_id": 4,
+  "observacoes": "Primeira parcela do contrato"
+}
+```
+
+**Fontes de Receita:**
+- `CONTRATO` - Pagamentos contratuais
+- `PAGAMENTO_CLIENTE` - Pagamentos de clientes
+- `ADIANTAMENTO` - Adiantamentos recebidos
+- `FINANCIAMENTO` - Financiamentos obtidos
+- `MEDICAO` - Pagamentos por medição
+- `OUTROS` - Outras receitas
+
+---
+
+### � Relatórios
+
+#### Relatório de Obra
+```http
+GET /relatorios/obra/:obra_id
+```
+**Retorna:** Orçamento vs Gasto vs Receita, Saldo Atual, Percentual de Lucro
+
+#### Relatório de Despesas por Categoria
+```http
+GET /relatorios/despesas/:obra_id
+```
+**Retorna:** Despesas agrupadas por categoria com totais e percentuais
+
+#### Relatório de Pagamentos
+```http
+GET /relatorios/pagamentos/:obra_id?status=PENDENTE
+```
+**Retorna:** Status de pagamentos, dias de atraso, formas de pagamento
+
+#### Relatório de Materiais
+```http
+GET /relatorios/materiais/:obra_id
+```
+**Retorna:** Total gasto em materiais, quantidade de itens, maior gasto
+
+#### Relatório de Profissionais
+```http
+GET /relatorios/profissionais/:obra_id
+```
+**Retorna:** Total mão de obra, quantidade de pagamentos, maior pagamento
+
+**Exemplo de Resposta - Relatório de Obra:**
+```json
+{
+  "data": {
+    "obra_id": 5,
+    "orcamento_previsto": 0,
+    "gasto_realizado": 1750,
+    "receita_total": 50000,
+    "saldo_atual": 48250,
+    "percentual_executado": 3.5,
+    "percentual_lucro": 96.5,
+    "status_financeiro": "LUCRO"
+  }
+}
+```
+
+---
+
+## � Comandos Úteis
+
+### Docker
 ```bash
-psql -h localhost -p 5440 -U obras -d obrasdb
+# Iniciar aplicação
+docker compose up -d
+
+# Ver logs
+docker logs api_obras -f
+docker logs db_obras -f
+
+# Rebuild após mudanças
+docker compose down
+docker compose up -d --build
+
+# Parar aplicação
+docker compose down
 ```
 
-Ou usando uma ferramenta GUI com as seguintes credenciais:
-- **Host**: localhost
-- **Port**: 5440
-- **Database**: obrasdb
-- **User**: obras
-- **Password**: 7894
+### Banco de Dados
+```bash
+# Conectar ao PostgreSQL
+docker exec -it db_obras psql -U obras -d obrasdb
+
+# Backup
+docker exec db_obras pg_dump -U obras obrasdb > backup.sql
+
+# Executar migrations
+./run-migrations.sh
+```
+
+### Desenvolvimento
+```bash
+# Rodar localmente (sem Docker)
+go run cmd/main.go
+
+# Build da aplicação
+go build ./...
+
+# Testes
+go test ./...
+```
+
+---
+
+## 📁 Estrutura do Projeto
+
+```
+OBRA/
+├── cmd/main.go                    # Ponto de entrada
+├── internal/
+│   ├── auth/                      # JWT e middleware
+│   ├── controllers/               # Handlers HTTP
+│   ├── models/                    # Estruturas de dados
+│   ├── services/                  # Acesso ao banco
+│   └── usecases/                  # Lógica de negócio
+├── migrations/                    # Scripts SQL
+├── pkg/postgres/                  # Configuração DB
+├── docker-compose.yml             # Orquestração
+├── Dockerfile                     # Imagem da API
+└── .env                          # Variáveis de ambiente
+```
+
+---
+
+## 🤝 Contribuição
+
+1. Fork o projeto
+2. Crie sua feature branch (`git checkout -b feature/nova-funcionalidade`)
+3. Commit suas mudanças (`git commit -am 'Add nova funcionalidade'`)
+4. Push para a branch (`git push origin feature/nova-funcionalidade`)
+5. Abra um Pull Request
+
+---
+
+## 📝 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+---
+
+## 📧 Contato
+
+- **GitHub**: [@MarkHiarley](https://github.com/MarkHiarley)
+- **Email**: markhiarley@exemplo.com
+
+---
+
+**🏗️ OBRA - Construindo o futuro da gestão de obras! 🚀**
 
 ---
 
@@ -341,9 +454,11 @@ Base URL: `http://localhost:9090`
 - [�👥 Pessoas](#-pessoas) - Gerenciamento de pessoas (contratantes, profissionais)
 - [👤 Usuários](#-usuários) - Gerenciamento de usuários do sistema
 - [🏗️ Obras](#️-obras) - Gerenciamento de obras e contratos
-- [📖 Diários de Obra](#-diários-de-obra) - Registro diário de atividades
+- [📖 Diários de Obra](#-diários-de-obra) - Registro diário de atividades (com suporte a fotos base64)
 - [🏪 Fornecedores](#-fornecedores) - Gerenciamento de fornecedores e prestadores
 - [💰 Despesas](#-despesas) - Controle financeiro e relatórios
+- [💵 Receitas](#-receitas) - Gerenciamento de receitas e entradas financeiras das obras
+- [📊 Relatórios](#-relatórios) - Sistema completo de relatórios financeiros e operacionais
 
 ### 🔑 Códigos de Status HTTP
 
@@ -1194,7 +1309,10 @@ POST /diarios
   "ocorrencias": "Entrega de materiais atrasou 2 horas",
   "observacoes": "Equipe trabalhou até às 18h para compensar",
   "responsavel_id": 2,
-  "status_aprovacao": "PENDENTE"
+  "status_aprovacao": "PENDENTE",
+  "clima": "ENSOLARADO",
+  "progresso_percentual": 10.5,
+  "foto": "data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
 }
 ```
 
@@ -1210,14 +1328,43 @@ POST /diarios
     "atividades_realizadas": "Instalação de tubulações hidráulicas e elétricas no 4º andar",
     "ocorrencias": "Entrega de materiais atrasou 2 horas",
     "observacoes": "Equipe trabalhou até às 18h para compensar",
+    "foto": "data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
     "responsavel_id": 2,
     "aprovado_por_id": null,
     "status_aprovacao": "PENDENTE",
+    "clima": "ENSOLARADO",
+    "progresso_percentual": 10.5,
     "createdAt": "2025-10-16T19:00:00Z",
     "updatedAt": "2025-10-16T19:00:00Z"
   }
 }
 ```
+
+**Validações e Enums:**
+
+**Período:**
+- `manha` - Período da manhã
+- `tarde` - Período da tarde  
+- `noite` - Período noturno
+- `integral` - Dia integral
+
+**Clima:**
+- `ENSOLARADO` - Dia ensolarado
+- `NUBLADO` - Dia nublado
+- `CHUVOSO` - Dia chuvoso
+- `VENTOSO` - Dia ventoso
+- `OUTROS` - Outras condições
+
+**Status de Aprovação:**
+- `pendente` - Aguardando aprovação
+- `aprovado` - Aprovado
+- `rejeitado` - Rejeitado
+
+**Campo Foto:**
+- Suporte a imagens em formato base64
+- Formato aceito: `data:image/[tipo];base64,[dados]`
+- Exemplo: `data:image/jpeg;base64,/9j/4AAQSkZJRgABA...`
+- Campo opcional (nullable)
 
 #### Atualizar diário
 ```http

@@ -50,6 +50,14 @@ func main() {
 	despesaUseCase := usecases.NewDespesaUsecase(despesaService)
 	despesaController := controller.NewDespesaController(despesaUseCase)
 
+	receitaService := services.NewReceitaService(dbconnection)
+	receitaUseCase := usecases.NewReceitaUseCase(receitaService, obraService)
+	receitaController := controller.NewReceitaController(receitaUseCase)
+
+	relatorioService := services.NewRelatorioService(dbconnection)
+	relatorioUseCase := usecases.NewRelatorioUseCase(relatorioService, obraService)
+	relatorioController := controller.NewRelatorioController(relatorioUseCase)
+
 	loginService := services.NewLoginService(dbconnection)
 	loginUseCase := usecases.NewLoginUsecase(loginService)
 	loginController := controller.NewLoginController(loginUseCase)
@@ -79,6 +87,7 @@ func main() {
 		protected.POST("/diarios", diarioController.CreateDiario)
 		protected.POST("/fornecedores", fornecedorController.CreateFornecedor)
 		protected.POST("/despesas", despesaController.CreateDespesa)
+		protected.POST("/receitas", receitaController.CreateReceita)
 
 		// READ (GET)
 		protected.GET("/usuarios", usuarioController.GetUsuarios)
@@ -101,6 +110,17 @@ func main() {
 		protected.GET("/despesas/:id", despesaController.GetDespesaById)
 		protected.GET("/despesas/relatorio/:obra_id", despesaController.GetRelatorioPorObra)
 
+		protected.GET("/receitas", receitaController.GetReceitas)
+		protected.GET("/receitas/:id", receitaController.GetReceitaById)
+		protected.GET("/receitas/obra/:obra_id", receitaController.GetReceitasByObra)
+
+		// RELATÓRIOS
+		protected.GET("/relatorios/obra/:obra_id", relatorioController.GetRelatorioObra)
+		protected.GET("/relatorios/despesas/:obra_id", relatorioController.GetRelatorioDespesasPorCategoria)
+		protected.GET("/relatorios/pagamentos/:obra_id", relatorioController.GetRelatorioPagamentos) // ?status=PENDENTE opcional
+		protected.GET("/relatorios/materiais/:obra_id", relatorioController.GetRelatorioMateriais)
+		protected.GET("/relatorios/profissionais/:obra_id", relatorioController.GetRelatorioProfissionais)
+
 		// UPDATE (PUT)
 		protected.PUT("/usuarios/:id", usuarioController.PutUsuarioById)
 		protected.PUT("/pessoas/:id", pessoaController.PutPessoaById)
@@ -108,6 +128,7 @@ func main() {
 		protected.PUT("/diarios/:id", diarioController.PutDiarioById)
 		protected.PUT("/fornecedores/:id", fornecedorController.PutFornecedorById)
 		protected.PUT("/despesas/:id", despesaController.PutDespesaById)
+		protected.PUT("/receitas/:id", receitaController.PutReceitaById)
 
 		// DELETE
 		protected.DELETE("/usuarios/:id", usuarioController.DeleteUsuarioById)
@@ -116,6 +137,7 @@ func main() {
 		protected.DELETE("/diarios/:id", diarioController.DeleteDiariosById)
 		protected.DELETE("/fornecedores/:id", fornecedorController.DeleteFornecedorById)
 		protected.DELETE("/despesas/:id", despesaController.DeleteDespesaById)
+		protected.DELETE("/receitas/:id", receitaController.DeleteReceitaById)
 	}
 
 	// ✅ Inicia servidor

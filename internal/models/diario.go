@@ -14,6 +14,7 @@ type DiarioObra struct {
 	AtividadesRealizadas null.String `json:"atividades_realizadas" binding:"required"`
 	Ocorrencias          null.String `json:"ocorrencias,omitempty"`
 	Observacoes          null.String `json:"observacoes,omitempty"`
+	Foto                 null.String `json:"foto,omitempty"` // Base64 encoded image
 	ResponsavelID        null.Int    `json:"responsavel_id,omitempty"`
 	AprovadoPorID        null.Int    `json:"aprovado_por_id,omitempty"`
 	StatusAprovacao      null.String `json:"status_aprovacao"`

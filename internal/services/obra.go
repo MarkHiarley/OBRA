@@ -22,7 +22,6 @@ func NewObraService(connection *sql.DB) ObraServices {
 func (pr *ObraServices) CreateObra(obra models.Obra) (int64, error) {
 	var id int64
 
-	// Include art column (nullable) so new field is persisted
 	query := `INSERT INTO obra (nome, contrato_numero, contratante_id, responsavel_id, data_inicio, prazo_dias, data_fim_prevista, orcamento, status, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, art, ativo ) 
 			  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) 
 			  RETURNING id`
