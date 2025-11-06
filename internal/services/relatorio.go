@@ -19,7 +19,7 @@ func NewRelatorioService(connection *sql.DB) RelatorioService {
 // GetRelatorioObra retorna relatório financeiro completo de uma obra
 func (rs *RelatorioService) GetRelatorioObra(obraId int64) (models.RelatorioObra, error) {
 	var relatorio models.RelatorioObra
-	
+
 	query := `
 		SELECT 
 			o.id,

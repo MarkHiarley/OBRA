@@ -22,7 +22,7 @@ func (rs *ReceitaService) CreateReceita(receita models.Receita) (models.Receita,
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id, created_at, updated_at
 	`
-	
+
 	err := rs.connection.QueryRow(
 		query,
 		receita.ObraID,
