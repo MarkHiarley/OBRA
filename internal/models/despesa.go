@@ -42,6 +42,7 @@ type Despesa struct {
 	ID                   null.Int    `json:"id"`
 	ObraID               null.Int    `json:"obra_id" binding:"required"`
 	FornecedorID         null.Int    `json:"fornecedor_id,omitempty"`
+	PessoaID             null.Int    `json:"pessoa_id,omitempty"` // Para despesas de mão de obra
 	Data                 null.Time   `json:"data,omitempty"`            // Data da despesa/compra (aceita também data_vencimento como fallback)
 	DataVencimento       null.Time   `json:"data_vencimento,omitempty"` // Data de vencimento do pagamento
 	Descricao            null.String `json:"descricao" binding:"required"`
@@ -56,10 +57,11 @@ type Despesa struct {
 	UpdatedAt            time.Time   `json:"updated_at"`
 }
 
-// DespesaComRelacionamentos inclui dados do fornecedor e obra
+// DespesaComRelacionamentos inclui dados do fornecedor, pessoa e obra
 type DespesaComRelacionamentos struct {
 	Despesa
 	FornecedorNome null.String `json:"fornecedor_nome,omitempty"`
+	PessoaNome     null.String `json:"pessoa_nome,omitempty"` // Nome da pessoa (para mão de obra)
 	ObraNome       null.String `json:"obra_nome,omitempty"`
 }
 

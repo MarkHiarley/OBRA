@@ -48,6 +48,11 @@ func (dc *despesaController) CreateDespesa(ctx *gin.Context) {
 			despesa.FornecedorID = null.IntFrom(int64(floatVal))
 		}
 	}
+	if val, ok := rawData["pessoa_id"]; ok {
+		if floatVal, ok := val.(float64); ok {
+			despesa.PessoaID = null.IntFrom(int64(floatVal))
+		}
+	}
 	if val, ok := rawData["descricao"]; ok {
 		if strVal, ok := val.(string); ok {
 			despesa.Descricao = null.StringFrom(strVal)

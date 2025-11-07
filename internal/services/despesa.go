@@ -22,17 +22,23 @@ func NewDespesaService(connection *sql.DB) DespesaServices {
 func (ds *DespesaServices) CreateDespesa(despesa models.Despesa) (int64, error) {
 	var id int64
 
-	query := `INSERT INTO despesa (obra_id, fornecedor_id, data, data_vencimento, descricao, categoria, valor, forma_pagamento, status_pagamento, data_pagamento, responsavel_pagamento, observacao) 
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
+	query := `INSERT INTO despesa (obra_id, fornecedor_id, pessoa_id, data, data_vencimento, descricao, categoria, valor, forma_pagamento, status_pagamento, data_pagamento, responsavel_pagamento, observacao) 
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
               RETURNING id`
 
 	// Tratar campos nullable
-	var fornecedorID, dataVencimento, dataPagamento interface{}
+	var fornecedorID, pessoaID, dataVencimento, dataPagamento interface{}
 
 	if despesa.FornecedorID.Valid {
 		fornecedorID = despesa.FornecedorID.Int64
 	} else {
 		fornecedorID = nil
+	}
+
+	if despesa.PessoaID.Valid {
+		pessoaID = despesa.PessoaID.Int64
+	} else {
+		pessoaID = nil
 	}
 
 	if despesa.DataVencimento.Valid {
@@ -50,6 +56,7 @@ func (ds *DespesaServices) CreateDespesa(despesa models.Despesa) (int64, error) 
 	err := ds.connection.QueryRow(query,
 		despesa.ObraID.Int64,
 		fornecedorID,
+		pessoaID,
 		despesa.Data.Time,
 		dataVencimento,
 		despesa.Descricao.String,
@@ -72,14 +79,16 @@ func (ds *DespesaServices) CreateDespesa(despesa models.Despesa) (int64, error) 
 func (ds *DespesaServices) GetDespesas() ([]models.DespesaComRelacionamentos, error) {
 	query := `
 		SELECT 
-			d.id, d.obra_id, d.fornecedor_id, d.data, d.data_vencimento, d.descricao, 
+			d.id, d.obra_id, d.fornecedor_id, d.pessoa_id, d.data, d.data_vencimento, d.descricao, 
 			d.categoria, d.valor, d.forma_pagamento, d.status_pagamento, 
 			d.data_pagamento, d.responsavel_pagamento, d.observacao, 
 			d.created_at, d.updated_at,
 			f.nome as fornecedor_nome,
+			p.nome as pessoa_nome,
 			o.nome as obra_nome
 		FROM despesa d
 		LEFT JOIN fornecedor f ON d.fornecedor_id = f.id
+		LEFT JOIN pessoa p ON d.pessoa_id = p.id
 		LEFT JOIN obra o ON d.obra_id = o.id
 		ORDER BY d.data DESC, d.created_at DESC`
 
@@ -98,6 +107,7 @@ func (ds *DespesaServices) GetDespesas() ([]models.DespesaComRelacionamentos, er
 			&despesa.ID,
 			&despesa.ObraID,
 			&despesa.FornecedorID,
+			&despesa.PessoaID,
 			&despesa.Data,
 			&despesa.DataVencimento,
 			&despesa.Descricao,
@@ -111,6 +121,7 @@ func (ds *DespesaServices) GetDespesas() ([]models.DespesaComRelacionamentos, er
 			&despesa.CreatedAt,
 			&despesa.UpdatedAt,
 			&despesa.FornecedorNome,
+			&despesa.PessoaNome,
 			&despesa.ObraNome,
 		)
 
@@ -128,14 +139,16 @@ func (ds *DespesaServices) GetDespesas() ([]models.DespesaComRelacionamentos, er
 func (ds *DespesaServices) GetDespesaById(id int64) (models.DespesaComRelacionamentos, error) {
 	query := `
 		SELECT 
-			d.id, d.obra_id, d.fornecedor_id, d.data, d.data_vencimento, d.descricao, 
+			d.id, d.obra_id, d.fornecedor_id, d.pessoa_id, d.data, d.data_vencimento, d.descricao, 
 			d.categoria, d.valor, d.forma_pagamento, d.status_pagamento, 
 			d.data_pagamento, d.responsavel_pagamento, d.observacao, 
 			d.created_at, d.updated_at,
 			f.nome as fornecedor_nome,
+			p.nome as pessoa_nome,
 			o.nome as obra_nome
 		FROM despesa d
 		LEFT JOIN fornecedor f ON d.fornecedor_id = f.id
+		LEFT JOIN pessoa p ON d.pessoa_id = p.id
 		LEFT JOIN obra o ON d.obra_id = o.id
 		WHERE d.id = $1`
 
@@ -147,6 +160,7 @@ func (ds *DespesaServices) GetDespesaById(id int64) (models.DespesaComRelacionam
 		&despesa.ID,
 		&despesa.ObraID,
 		&despesa.FornecedorID,
+		&despesa.PessoaID,
 		&despesa.Data,
 		&despesa.DataVencimento,
 		&despesa.Descricao,
@@ -160,6 +174,7 @@ func (ds *DespesaServices) GetDespesaById(id int64) (models.DespesaComRelacionam
 		&despesa.CreatedAt,
 		&despesa.UpdatedAt,
 		&despesa.FornecedorNome,
+		&despesa.PessoaNome,
 		&despesa.ObraNome,
 	)
 
@@ -176,14 +191,16 @@ func (ds *DespesaServices) GetDespesaById(id int64) (models.DespesaComRelacionam
 func (ds *DespesaServices) GetDespesasByObraId(obraId int64) ([]models.DespesaComRelacionamentos, error) {
 	query := `
 		SELECT 
-			d.id, d.obra_id, d.fornecedor_id, d.data, d.data_vencimento, d.descricao, 
+			d.id, d.obra_id, d.fornecedor_id, d.pessoa_id, d.data, d.data_vencimento, d.descricao, 
 			d.categoria, d.valor, d.forma_pagamento, d.status_pagamento, 
 			d.data_pagamento, d.responsavel_pagamento, d.observacao, 
 			d.created_at, d.updated_at,
 			f.nome as fornecedor_nome,
+			p.nome as pessoa_nome,
 			o.nome as obra_nome
 		FROM despesa d
 		LEFT JOIN fornecedor f ON d.fornecedor_id = f.id
+		LEFT JOIN pessoa p ON d.pessoa_id = p.id
 		LEFT JOIN obra o ON d.obra_id = o.id
 		WHERE d.obra_id = $1
 		ORDER BY d.data DESC`
@@ -203,6 +220,7 @@ func (ds *DespesaServices) GetDespesasByObraId(obraId int64) ([]models.DespesaCo
 			&despesa.ID,
 			&despesa.ObraID,
 			&despesa.FornecedorID,
+			&despesa.PessoaID,
 			&despesa.Data,
 			&despesa.DataVencimento,
 			&despesa.Descricao,
@@ -216,6 +234,7 @@ func (ds *DespesaServices) GetDespesasByObraId(obraId int64) ([]models.DespesaCo
 			&despesa.CreatedAt,
 			&despesa.UpdatedAt,
 			&despesa.FornecedorNome,
+			&despesa.PessoaNome,
 			&despesa.ObraNome,
 		)
 
@@ -233,14 +252,16 @@ func (ds *DespesaServices) GetDespesasByObraId(obraId int64) ([]models.DespesaCo
 func (ds *DespesaServices) GetDespesasByFornecedorId(fornecedorId int64) ([]models.DespesaComRelacionamentos, error) {
 	query := `
 		SELECT 
-			d.id, d.obra_id, d.fornecedor_id, d.data, d.data_vencimento, d.descricao, 
+			d.id, d.obra_id, d.fornecedor_id, d.pessoa_id, d.data, d.data_vencimento, d.descricao, 
 			d.categoria, d.valor, d.forma_pagamento, d.status_pagamento, 
 			d.data_pagamento, d.responsavel_pagamento, d.observacao, 
 			d.created_at, d.updated_at,
 			f.nome as fornecedor_nome,
+			p.nome as pessoa_nome,
 			o.nome as obra_nome
 		FROM despesa d
 		LEFT JOIN fornecedor f ON d.fornecedor_id = f.id
+		LEFT JOIN pessoa p ON d.pessoa_id = p.id
 		LEFT JOIN obra o ON d.obra_id = o.id
 		WHERE d.fornecedor_id = $1
 		ORDER BY d.data DESC`
@@ -260,6 +281,7 @@ func (ds *DespesaServices) GetDespesasByFornecedorId(fornecedorId int64) ([]mode
 			&despesa.ID,
 			&despesa.ObraID,
 			&despesa.FornecedorID,
+			&despesa.PessoaID,
 			&despesa.Data,
 			&despesa.DataVencimento,
 			&despesa.Descricao,
@@ -273,6 +295,7 @@ func (ds *DespesaServices) GetDespesasByFornecedorId(fornecedorId int64) ([]mode
 			&despesa.CreatedAt,
 			&despesa.UpdatedAt,
 			&despesa.FornecedorNome,
+			&despesa.PessoaNome,
 			&despesa.ObraNome,
 		)
 
@@ -337,31 +360,38 @@ func (ds *DespesaServices) PutDespesa(id int, despesaToUpdate models.Despesa) (m
         SET 
             obra_id = $1,
             fornecedor_id = $2, 
-            data = $3,
-            data_vencimento = $4, 
-            descricao = $5, 
-            categoria = $6, 
-            valor = $7, 
-            forma_pagamento = $8,
-            status_pagamento = $9,
-            data_pagamento = $10,
-            responsavel_pagamento = $11,
-            observacao = $12,
-			updated_at = $13
-        WHERE id = $14
-        RETURNING id, obra_id, fornecedor_id, data, data_vencimento, descricao, categoria, valor, 
+            pessoa_id = $3,
+            data = $4,
+            data_vencimento = $5, 
+            descricao = $6, 
+            categoria = $7, 
+            valor = $8, 
+            forma_pagamento = $9,
+            status_pagamento = $10,
+            data_pagamento = $11,
+            responsavel_pagamento = $12,
+            observacao = $13,
+			updated_at = $14
+        WHERE id = $15
+        RETURNING id, obra_id, fornecedor_id, pessoa_id, data, data_vencimento, descricao, categoria, valor, 
                   forma_pagamento, status_pagamento, data_pagamento, responsavel_pagamento, 
                   observacao, created_at, updated_at`
 
 	var updatedDespesa models.Despesa
 
 	// Tratar campos nullable
-	var fornecedorID, dataVencimento, dataPagamento interface{}
+	var fornecedorID, pessoaID, dataVencimento, dataPagamento interface{}
 
 	if despesaToUpdate.FornecedorID.Valid {
 		fornecedorID = despesaToUpdate.FornecedorID.Int64
 	} else {
 		fornecedorID = nil
+	}
+
+	if despesaToUpdate.PessoaID.Valid {
+		pessoaID = despesaToUpdate.PessoaID.Int64
+	} else {
+		pessoaID = nil
 	}
 
 	if despesaToUpdate.DataVencimento.Valid {
@@ -379,6 +409,7 @@ func (ds *DespesaServices) PutDespesa(id int, despesaToUpdate models.Despesa) (m
 	err := ds.connection.QueryRowContext(context.Background(), query,
 		despesaToUpdate.ObraID.Int64,
 		fornecedorID,
+		pessoaID,
 		despesaToUpdate.Data.Time,
 		dataVencimento,
 		despesaToUpdate.Descricao.String,
@@ -395,6 +426,7 @@ func (ds *DespesaServices) PutDespesa(id int, despesaToUpdate models.Despesa) (m
 		&updatedDespesa.ID,
 		&updatedDespesa.ObraID,
 		&updatedDespesa.FornecedorID,
+		&updatedDespesa.PessoaID,
 		&updatedDespesa.Data,
 		&updatedDespesa.DataVencimento,
 		&updatedDespesa.Descricao,

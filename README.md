@@ -1600,6 +1600,8 @@ DELETE /fornecedores/:id
 
 ### 💰 Despesas
 
+> 🆕 **Nova Funcionalidade**: Agora é possível associar despesas de **mão de obra** com pessoas específicas através do campo `pessoa_id`, permitindo um controle mais preciso dos pagamentos a profissionais.
+
 #### Listar todas as despesas
 ```http
 GET /despesas
@@ -1613,6 +1615,7 @@ GET /despesas
       "id": 1,
       "obra_id": 1,
       "fornecedor_id": 2,
+      "pessoa_id": null,
       "descricao": "Compra de cimento Portland",
       "categoria": "MATERIAL",
       "valor": 1500.00,
@@ -1621,8 +1624,30 @@ GET /despesas
       "forma_pagamento": "BOLETO",
       "status_pagamento": "PENDENTE",
       "observacoes": "Entrega prevista para 10/11",
+      "fornecedor_nome": "Materiais Silva LTDA",
+      "pessoa_nome": null,
+      "obra_nome": "Construção Edifício Central",
       "created_at": "2025-10-16T14:00:00Z",
       "updated_at": "2025-10-16T14:00:00Z"
+    },
+    {
+      "id": 2,
+      "obra_id": 1,
+      "fornecedor_id": null,
+      "pessoa_id": 4,
+      "descricao": "Pagamento semanal - João Silva",
+      "categoria": "MAO_DE_OBRA",
+      "valor": 2500.00,
+      "data_vencimento": "2025-11-10",
+      "data_pagamento": null,
+      "forma_pagamento": "PIX",
+      "status_pagamento": "PENDENTE",
+      "observacoes": "Pagamento semanal",
+      "fornecedor_nome": null,
+      "pessoa_nome": "João Silva",
+      "obra_nome": "Construção Edifício Central",
+      "created_at": "2025-11-07T14:00:00Z",
+      "updated_at": "2025-11-07T14:00:00Z"
     }
   ]
 }
@@ -1639,19 +1664,23 @@ GET /despesas/:id
 **Resposta (200 OK):**
 ```json
 {
-  "id": 1,
+  "id": 2,
   "obra_id": 1,
-  "fornecedor_id": 2,
-  "descricao": "Compra de cimento Portland",
-  "categoria": "MATERIAL",
-  "valor": 1500.00,
-  "data_vencimento": "2025-11-15",
+  "fornecedor_id": null,
+  "pessoa_id": 4,
+  "descricao": "Pagamento semanal - João Silva",
+  "categoria": "MAO_DE_OBRA",
+  "valor": 2500.00,
+  "data_vencimento": "2025-11-10",
   "data_pagamento": null,
-  "forma_pagamento": "BOLETO",
+  "forma_pagamento": "PIX",
   "status_pagamento": "PENDENTE",
-  "observacoes": "Entrega prevista para 10/11",
-  "created_at": "2025-10-16T14:00:00Z",
-  "updated_at": "2025-10-16T14:00:00Z"
+  "observacoes": "Pagamento semanal",
+  "fornecedor_nome": null,
+  "pessoa_nome": "João Silva",
+  "obra_nome": "Construção Edifício Central",
+  "created_at": "2025-11-07T14:00:00Z",
+  "updated_at": "2025-11-07T14:00:00Z"
 }
 ```
 
@@ -1660,41 +1689,61 @@ GET /despesas/:id
 POST /despesas
 ```
 
-**Body:**
-Note: the API accepts either `data` (date of the expense) or `data_vencimento` (due date). If `data` is omitted and `data_vencimento` is provided, the server will fallback to using `data_vencimento` as `data`.
-
+**Body - Despesa de Material (com fornecedor):**
 ```json
 {
   "obra_id": 1,
   "fornecedor_id": 3,
-  "descricao": "Pagamento de pedreiros - semana 42",
-  "categoria": "MAO_DE_OBRA",
-  "valor": 2800.00,
-  "data_vencimento": "2025-10-25T00:00:00Z",
-  "forma_pagamento": "PIX",
+  "descricao": "Compra de areia e brita",
+  "categoria": "MATERIAL",
+  "valor": 3500.00,
+  "data": "2025-11-07",
+  "data_vencimento": "2025-11-15",
+  "forma_pagamento": "BOLETO",
   "status_pagamento": "PENDENTE",
-  "observacoes": "Pagamento semanal da equipe"
+  "observacao": "Entrega programada para 10/11"
 }
 ```
+
+**Body - Despesa de Mão de Obra (com pessoa):**
+```json
+{
+  "obra_id": 1,
+  "pessoa_id": 4,
+  "descricao": "Pagamento semanal - João Silva",
+  "categoria": "MAO_DE_OBRA",
+  "valor": 2500.00,
+  "data": "2025-11-07",
+  "data_vencimento": "2025-11-10",
+  "forma_pagamento": "PIX",
+  "status_pagamento": "PENDENTE",
+  "observacao": "Pagamento da semana 45"
+}
+```
+
+> 💡 **Dica**: Para despesas de **mão de obra**, utilize o campo `pessoa_id` para associar o pagamento a um profissional específico. Para **materiais e serviços**, use `fornecedor_id`.
 
 **Resposta (201 Created):**
 ```json
 {
   "message": "Despesa criada com sucesso",
   "data": {
-    "id": 2,
+    "id": 14,
     "obra_id": 1,
-    "fornecedor_id": 3,
-    "descricao": "Pagamento de pedreiros - semana 42",
+    "fornecedor_id": null,
+    "pessoa_id": 4,
+    "descricao": "Pagamento semanal - João Silva",
     "categoria": "MAO_DE_OBRA",
-    "valor": 2800.00,
-    "data_vencimento": "2025-10-25",
+    "valor": 2500.00,
+    "data": "2025-11-07",
+    "data_vencimento": "2025-11-10",
     "data_pagamento": null,
     "forma_pagamento": "PIX",
     "status_pagamento": "PENDENTE",
-    "observacoes": "Pagamento semanal da equipe",
-    "created_at": "2025-10-16T15:00:00Z",
-    "updated_at": "2025-10-16T15:00:00Z"
+    "responsavel_pagamento": null,
+    "observacao": "Pagamento da semana 45",
+    "created_at": "2025-11-07T15:00:00Z",
+    "updated_at": "2025-11-07T15:00:00Z"
   }
 }
 ```
@@ -1711,34 +1760,39 @@ PUT /despesas/:id
 ```json
 {
   "obra_id": 1,
-  "fornecedor_id": 3,
-  "descricao": "Pagamento de pedreiros - semana 42",
+  "pessoa_id": 4,
+  "descricao": "Pagamento semanal - João Silva",
   "categoria": "MAO_DE_OBRA",
-  "valor": 2800.00,
-  "data_vencimento": "2025-10-25",
-  "data_pagamento": "2025-10-24",
+  "valor": 2500.00,
+  "data": "2025-11-07",
+  "data_vencimento": "2025-11-10",
+  "data_pagamento": "2025-11-09",
   "forma_pagamento": "PIX",
   "status_pagamento": "PAGO",
-  "observacoes": "Pagamento realizado via PIX"
+  "responsavel_pagamento": "Sistema",
+  "observacao": "Pagamento realizado via PIX"
 }
 ```
 
 **Resposta (200 OK):**
 ```json
 {
-  "id": 2,
+  "id": 14,
   "obra_id": 1,
-  "fornecedor_id": 3,
-  "descricao": "Pagamento de pedreiros - semana 42",
+  "fornecedor_id": null,
+  "pessoa_id": 4,
+  "descricao": "Pagamento semanal - João Silva",
   "categoria": "MAO_DE_OBRA",
-  "valor": 2800.00,
-  "data_vencimento": "2025-10-25",
-  "data_pagamento": "2025-10-24",
+  "valor": 2500.00,
+  "data": "2025-11-07",
+  "data_vencimento": "2025-11-10",
+  "data_pagamento": "2025-11-09",
   "forma_pagamento": "PIX",
   "status_pagamento": "PAGO",
-  "observacoes": "Pagamento realizado via PIX",
-  "created_at": "2025-10-16T15:00:00Z",
-  "updated_at": "2025-10-16T16:00:00Z"
+  "responsavel_pagamento": "Sistema",
+  "observacao": "Pagamento realizado via PIX",
+  "created_at": "2025-11-07T15:00:00Z",
+  "updated_at": "2025-11-09T10:30:00Z"
 }
 ```
 
@@ -1800,11 +1854,11 @@ GET /despesas/relatorio/:obra_id
 #### Enums e Validações
 
 **Categorias de Despesa:**
-- `MATERIAL` - Materiais de construção
-- `MAO_DE_OBRA` - Mão de obra e serviços
-- `TRANSPORTE` - Fretes e transportes
-- `EQUIPAMENTO` - Aluguel de equipamentos
-- `ALIMENTACAO` - Alimentação da equipe
+- `MATERIAL` - Materiais de construção (use `fornecedor_id`)
+- `MAO_DE_OBRA` - Mão de obra e serviços (use `pessoa_id` para profissionais específicos ou `fornecedor_id` para empresas)
+- `TRANSPORTE` - Fretes e transportes (use `fornecedor_id`)
+- `EQUIPAMENTO` - Aluguel de equipamentos (use `fornecedor_id`)
+- `ALIMENTACAO` - Alimentação da equipe (use `fornecedor_id`)
 - `OUTROS` - Outras despesas
 
 **Formas de Pagamento:**
@@ -1821,6 +1875,20 @@ GET /despesas/relatorio/:obra_id
 - `PAGO` - Pagamento realizado
 - `VENCIDO` - Pagamento em atraso
 - `CANCELADO` - Despesa cancelada
+
+**Campos de Relacionamento:**
+
+| Campo | Tipo | Obrigatório | Descrição | Quando Usar |
+|-------|------|-------------|-----------|-------------|
+| `fornecedor_id` | Integer | Não | ID do fornecedor | Para materiais, equipamentos, serviços de empresas |
+| `pessoa_id` | Integer | Não | ID da pessoa | Para pagamentos de mão de obra a profissionais específicos |
+
+> 📌 **Importante**: 
+> - Os campos `fornecedor_id` e `pessoa_id` são **mutuamente exclusivos** na maioria dos casos
+> - Para despesas de **mão de obra** pagas a um profissional individual, use `pessoa_id`
+> - Para despesas de **mão de obra** pagas a uma empresa prestadora de serviços, use `fornecedor_id`
+> - Para outras categorias (materiais, equipamentos, etc.), use `fornecedor_id`
+> - Ao consultar despesas, os nomes relacionados aparecem nos campos `fornecedor_nome` e `pessoa_nome`
 
 **Resposta de Erro (404 Not Found):**
 ```json

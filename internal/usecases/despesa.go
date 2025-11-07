@@ -61,7 +61,7 @@ func (du *DespesaUseCase) CreateDespesa(newDespesa models.Despesa) (models.Despe
 
 	despesaId, err := du.services.CreateDespesa(newDespesa)
 	if err != nil {
-		// Verifica se é erro de FK (obra ou fornecedor não existe)
+		// Verifica se é erro de FK (obra, fornecedor ou pessoa não existe)
 		if strings.Contains(err.Error(), "foreign key") {
 			if strings.Contains(err.Error(), "obra_id") {
 				return models.Despesa{}, fmt.Errorf("obra não encontrada")
@@ -69,12 +69,24 @@ func (du *DespesaUseCase) CreateDespesa(newDespesa models.Despesa) (models.Despe
 			if strings.Contains(err.Error(), "fornecedor_id") {
 				return models.Despesa{}, fmt.Errorf("fornecedor não encontrado")
 			}
+			if strings.Contains(err.Error(), "pessoa_id") {
+				return models.Despesa{}, fmt.Errorf("pessoa não encontrada")
+			}
 		}
 		return models.Despesa{}, err
 	}
 
-	newDespesa.ID.Int64 = despesaId
-	newDespesa.ID.Valid = true
+	// Busca a despesa criada com todos os relacionamentos
+	despesaCompleta, err := du.services.GetDespesaById(despesaId)
+	if err != nil {
+		return models.Despesa{}, err
+	}
+
+	// Converte DespesaComRelacionamentos para Despesa
+	newDespesa.ID.Int64 = despesaCompleta.ID.Int64
+	newDespesa.ID.Valid = despesaCompleta.ID.Valid
+	newDespesa.CreatedAt = despesaCompleta.CreatedAt
+	newDespesa.UpdatedAt = despesaCompleta.UpdatedAt
 
 	return newDespesa, nil
 }
