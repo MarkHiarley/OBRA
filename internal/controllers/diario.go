@@ -9,6 +9,7 @@ import (
 	"codxis-obras/internal/usecases"
 
 	"github.com/gin-gonic/gin"
+	"gopkg.in/guregu/null.v4"
 )
 
 type DiarioController struct {
@@ -31,6 +32,11 @@ func (p *DiarioController) CreateDiario(ctx *gin.Context) {
 			"details": err.Error(),
 		})
 		return
+	}
+
+	// Normalizar: tratar 0 como ausência (NULL) para aprovado_por_id
+	if diario.AprovadoPorID.Valid && diario.AprovadoPorID.Int64 == 0 {
+		diario.AprovadoPorID = null.Int{}
 	}
 
 	createdDiario, err := p.DiarioUseCase.CreateDiario(diario)
@@ -189,9 +195,9 @@ func (p *DiarioController) PutDiarioById(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "O campo 'Responsável' é obrigatório."})
 		return // Stop processing
 	}
-	if !updatedDiario.AprovadoPorID.Valid || updatedDiario.AprovadoPorID.Int64 == 0 {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "O campo 'Aprovado Por' é obrigatório."})
-		return // Stop processing
+	// Normalizar: tratar 0 como ausência (NULL) para aprovado_por_id
+	if updatedDiario.AprovadoPorID.Valid && updatedDiario.AprovadoPorID.Int64 == 0 {
+		updatedDiario.AprovadoPorID = null.Int{}
 	}
 	if !updatedDiario.StatusAprovacao.Valid || updatedDiario.StatusAprovacao.String == "" {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "O campo 'Status de Aprovação' é obrigatório."})
