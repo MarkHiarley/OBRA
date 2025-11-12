@@ -15,6 +15,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - obras_network
+
   api_obras:
     container_name: api_obras
     build: .
@@ -31,7 +34,13 @@ services:
     depends_on:
       db_obras:
         condition: service_healthy
-    restart: on-failure
+    restart: unless-stopped
+    networks:
+      - obras_network
 
 volumes:
-  pgdata: {}
+  pgdata:
+
+networks:
+  obras_network:
+    driver: bridge
