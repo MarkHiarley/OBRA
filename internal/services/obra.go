@@ -22,8 +22,8 @@ func NewObraService(connection *sql.DB) ObraServices {
 func (pr *ObraServices) CreateObra(obra models.Obra) (int64, error) {
 	var id int64
 
-	query := `INSERT INTO obra (nome, contrato_numero, contratante_id, responsavel_id, data_inicio, prazo_dias, data_fim_prevista, orcamento, status, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, art, ativo ) 
-			  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) 
+	query := `INSERT INTO obra (nome, contrato_numero, contratante_id, responsavel_id, data_inicio, prazo_dias, data_fim_prevista, orcamento, status, art, foto, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, ativo ) 
+			  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) 
 			  RETURNING id`
 
 	err := pr.connection.QueryRow(query,
@@ -36,6 +36,8 @@ func (pr *ObraServices) CreateObra(obra models.Obra) (int64, error) {
 		obra.DataFimPrevista.String,
 		obra.Orcamento.Float64,
 		obra.Status.String,
+		obra.Art.String,
+		obra.Foto.String,
 		obra.EnderecoRua.String,
 		obra.EnderecoNumero.String,
 		obra.EnderecoBairro.String,
@@ -43,7 +45,6 @@ func (pr *ObraServices) CreateObra(obra models.Obra) (int64, error) {
 		obra.EnderecoEstado.String,
 		obra.EnderecoCep.String,
 		obra.Observacoes.String,
-		obra.Art.String,
 		obra.Ativo).Scan(&id)
 
 	if err != nil {
@@ -55,7 +56,7 @@ func (pr *ObraServices) CreateObra(obra models.Obra) (int64, error) {
 }
 
 func (pr *ObraServices) GetObras() ([]models.Obra, error) {
-	query := "select id, nome, contrato_numero, contratante_id, responsavel_id, data_inicio, prazo_dias, data_fim_prevista, orcamento, status, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, art, ativo, created_at, updated_at from obra"
+	query := "select id, nome, contrato_numero, contratante_id, responsavel_id, data_inicio, prazo_dias, data_fim_prevista, orcamento, status, art, foto, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, ativo, created_at, updated_at from obra"
 	rows, err := pr.connection.Query(query)
 	if err != nil {
 		fmt.Println(err)
@@ -78,6 +79,8 @@ func (pr *ObraServices) GetObras() ([]models.Obra, error) {
 			&obraObj.DataFimPrevista,
 			&obraObj.Orcamento,
 			&obraObj.Status,
+			&obraObj.Art,
+			&obraObj.Foto,
 			&obraObj.EnderecoRua,
 			&obraObj.EnderecoNumero,
 			&obraObj.EnderecoBairro,
@@ -85,7 +88,6 @@ func (pr *ObraServices) GetObras() ([]models.Obra, error) {
 			&obraObj.EnderecoEstado,
 			&obraObj.EnderecoCep,
 			&obraObj.Observacoes,
-			&obraObj.Art,
 			&obraObj.Ativo,
 			&obraObj.CreatedAt,
 			&obraObj.UpdatedAt)
@@ -106,7 +108,7 @@ func (pr *ObraServices) GetObras() ([]models.Obra, error) {
 func (pr ObraServices) GetObraById(id int64) (models.Obra, error) {
 
 	//id, nome, email, tipo_documento, documento, telefone, perfil_acesso, ativo, created_at, updated_at
-	query := "select id, nome, contrato_numero, contratante_id, responsavel_id, data_inicio, prazo_dias, data_fim_prevista,orcamento, endereco_rua,endereco_numero, endereco_bairro, endereco_cidade,endereco_estado, endereco_cep, observacoes, art, status, ativo,created_at, updated_at from obra where id = $1"
+	query := "select id, nome, contrato_numero, contratante_id, responsavel_id, data_inicio, prazo_dias, data_fim_prevista, orcamento, status, art, foto, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, ativo, created_at, updated_at from obra where id = $1"
 
 	row := pr.connection.QueryRow(query, id)
 	fmt.Println(query, id)
@@ -122,6 +124,9 @@ func (pr ObraServices) GetObraById(id int64) (models.Obra, error) {
 		&obra.PrazoDias,
 		&obra.DataFimPrevista,
 		&obra.Orcamento,
+		&obra.Status,
+		&obra.Art,
+		&obra.Foto,
 		&obra.EnderecoRua,
 		&obra.EnderecoNumero,
 		&obra.EnderecoBairro,
@@ -129,8 +134,6 @@ func (pr ObraServices) GetObraById(id int64) (models.Obra, error) {
 		&obra.EnderecoEstado,
 		&obra.EnderecoCep,
 		&obra.Observacoes,
-		&obra.Art,
-		&obra.Status,
 		&obra.Ativo,
 		&obra.CreatedAt,
 		&obra.UpdatedAt,
@@ -162,18 +165,19 @@ func (pr ObraServices) PutObra(id int, ObraToUpdate models.Obra) (models.Obra, e
 			data_fim_prevista = $7,
 			orcamento = $8,
 			status = $9,
-			endereco_rua = $10,
-			endereco_numero = $11,
-			endereco_bairro = $12,
-			endereco_cidade = $13,
-			endereco_estado = $14,
-			endereco_cep = $15,
-			observacoes = $16,
-			art = $17,
-			ativo = $18,
-			updated_at = $19
-		WHERE id = $20
-		RETURNING id, nome, contrato_numero, contratante_id, responsavel_id, data_inicio, prazo_dias, data_fim_prevista, orcamento, status, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, art, ativo, created_at, updated_at`
+			art = $10,
+			foto = $11,
+			endereco_rua = $12,
+			endereco_numero = $13,
+			endereco_bairro = $14,
+			endereco_cidade = $15,
+			endereco_estado = $16,
+			endereco_cep = $17,
+			observacoes = $18,
+			ativo = $19,
+			updated_at = $20
+		WHERE id = $21
+		RETURNING id, nome, contrato_numero, contratante_id, responsavel_id, data_inicio, prazo_dias, data_fim_prevista, orcamento, status, art, foto, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, ativo, created_at, updated_at`
 	var updatedObra models.Obra
 
 	err := pr.connection.QueryRowContext(context.Background(), query,
@@ -186,6 +190,8 @@ func (pr ObraServices) PutObra(id int, ObraToUpdate models.Obra) (models.Obra, e
 		ObraToUpdate.DataFimPrevista.String,
 		ObraToUpdate.Orcamento.Float64,
 		ObraToUpdate.Status.String,
+		ObraToUpdate.Art.String,
+		ObraToUpdate.Foto.String,
 		ObraToUpdate.EnderecoRua.String,
 		ObraToUpdate.EnderecoNumero.String,
 		ObraToUpdate.EnderecoBairro.String,
@@ -193,7 +199,6 @@ func (pr ObraServices) PutObra(id int, ObraToUpdate models.Obra) (models.Obra, e
 		ObraToUpdate.EnderecoEstado.String,
 		ObraToUpdate.EnderecoCep.String,
 		ObraToUpdate.Observacoes.String,
-		ObraToUpdate.Art.String,
 		ObraToUpdate.Ativo.Bool,
 		time.Now(),
 		id,
@@ -208,6 +213,8 @@ func (pr ObraServices) PutObra(id int, ObraToUpdate models.Obra) (models.Obra, e
 		&updatedObra.DataFimPrevista,
 		&updatedObra.Orcamento,
 		&updatedObra.Status,
+		&updatedObra.Art,
+		&updatedObra.Foto,
 		&updatedObra.EnderecoRua,
 		&updatedObra.EnderecoNumero,
 		&updatedObra.EnderecoBairro,
@@ -215,7 +222,6 @@ func (pr ObraServices) PutObra(id int, ObraToUpdate models.Obra) (models.Obra, e
 		&updatedObra.EnderecoEstado,
 		&updatedObra.EnderecoCep,
 		&updatedObra.Observacoes,
-		&updatedObra.Art,
 		&updatedObra.Ativo,
 		&updatedObra.CreatedAt,
 		&updatedObra.UpdatedAt,

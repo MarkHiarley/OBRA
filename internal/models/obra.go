@@ -16,6 +16,7 @@ type Obra struct {
 	Orcamento       null.Float  `json:"orcamento,omitempty"`
 	Status          null.String `json:"status"`
 	Art             null.String `json:"art,omitempty"`
+	Foto            null.String `json:"foto,omitempty"`
 	EnderecoRua     null.String `json:"endereco_rua,omitempty"`
 	EnderecoNumero  null.String `json:"endereco_numero,omitempty"`
 	EnderecoBairro  null.String `json:"endereco_bairro,omitempty"`

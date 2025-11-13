@@ -22,8 +22,8 @@ func NewPessoaService(connection *sql.DB) PessoaServices {
 func (pr *PessoaServices) CreatePessoa(pessoa models.Pessoa) (int64, error) {
 	var id int64
 
-	query := `INSERT INTO pessoa (nome, tipo, documento, email, telefone, cargo) 
-              VALUES ($1, $2, $3, $4, $5, $6) 
+	query := `INSERT INTO pessoa (nome, tipo, documento, email, telefone, cargo, endereco_rua, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep) 
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
               RETURNING id`
 
 	err := pr.connection.QueryRow(query,
@@ -32,7 +32,14 @@ func (pr *PessoaServices) CreatePessoa(pessoa models.Pessoa) (int64, error) {
 		pessoa.Documento.String,
 		pessoa.Email.String,
 		pessoa.Telefone.String,
-		pessoa.Cargo.String).Scan(&id)
+		pessoa.Cargo.String,
+		pessoa.EnderecoRua.String,
+		pessoa.EnderecoNumero.String,
+		pessoa.EnderecoComplemento.String,
+		pessoa.EnderecoBairro.String,
+		pessoa.EnderecoCidade.String,
+		pessoa.EnderecoEstado.String,
+		pessoa.EnderecoCep.String).Scan(&id)
 
 	if err != nil {
 		fmt.Printf("Erro ao criar pessoa: %v\n", err)
@@ -43,7 +50,7 @@ func (pr *PessoaServices) CreatePessoa(pessoa models.Pessoa) (int64, error) {
 }
 
 func (pr *PessoaServices) GetPessoas() ([]models.Pessoa, error) {
-	query := "select id, nome, tipo, documento, email, telefone, cargo, ativo, created_at, updated_at from pessoa"
+	query := "select id, nome, tipo, documento, email, telefone, cargo, endereco_rua, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, ativo, created_at, updated_at from pessoa"
 	rows, err := pr.connection.Query(query)
 	if err != nil {
 		fmt.Println(err)
@@ -62,6 +69,13 @@ func (pr *PessoaServices) GetPessoas() ([]models.Pessoa, error) {
 			&pessoaObj.Email,
 			&pessoaObj.Telefone,
 			&pessoaObj.Cargo,
+			&pessoaObj.EnderecoRua,
+			&pessoaObj.EnderecoNumero,
+			&pessoaObj.EnderecoComplemento,
+			&pessoaObj.EnderecoBairro,
+			&pessoaObj.EnderecoCidade,
+			&pessoaObj.EnderecoEstado,
+			&pessoaObj.EnderecoCep,
 			&pessoaObj.Ativo,
 			&pessoaObj.CreatedAt,
 			&pessoaObj.UpdatedAt,
@@ -83,7 +97,7 @@ func (pr *PessoaServices) GetPessoas() ([]models.Pessoa, error) {
 func (pr PessoaServices) GetPessoaById(id int64) (models.Pessoa, error) {
 
 	//id, nome, email, tipo_documento, documento, telefone, perfil_acesso, ativo, created_at, updated_at
-	query := "select id, nome, tipo, documento, email, telefone, cargo, ativo,created_at, updated_at from pessoa where id = $1"
+	query := "select id, nome, tipo, documento, email, telefone, cargo, endereco_rua, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, ativo, created_at, updated_at from pessoa where id = $1"
 
 	row := pr.connection.QueryRow(query, id)
 
@@ -97,6 +111,13 @@ func (pr PessoaServices) GetPessoaById(id int64) (models.Pessoa, error) {
 		&pessoa.Email,
 		&pessoa.Telefone,
 		&pessoa.Cargo,
+		&pessoa.EnderecoRua,
+		&pessoa.EnderecoNumero,
+		&pessoa.EnderecoComplemento,
+		&pessoa.EnderecoBairro,
+		&pessoa.EnderecoCidade,
+		&pessoa.EnderecoEstado,
+		&pessoa.EnderecoCep,
 		&pessoa.Ativo,
 		&pessoa.CreatedAt,
 		&pessoa.UpdatedAt,
@@ -125,11 +146,18 @@ func (pr PessoaServices) PutPessoa(id int, pessoaToUpdate models.Pessoa) (models
             documento = $3, 
             email = $4, 
             telefone = $5, 
-            cargo = $6, 
-            ativo = $7,
-			updated_at =$8
-        WHERE id = $9
-        RETURNING id, nome, tipo, documento, email, telefone, cargo, ativo, created_at, updated_at`
+            cargo = $6,
+            endereco_rua = $7,
+            endereco_numero = $8,
+            endereco_complemento = $9,
+            endereco_bairro = $10,
+            endereco_cidade = $11,
+            endereco_estado = $12,
+            endereco_cep = $13, 
+            ativo = $14,
+			updated_at = $15
+        WHERE id = $16
+        RETURNING id, nome, tipo, documento, email, telefone, cargo, endereco_rua, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, ativo, created_at, updated_at`
 	var updatedPessoa models.Pessoa
 
 	err := pr.connection.QueryRowContext(context.Background(), query,
@@ -139,6 +167,13 @@ func (pr PessoaServices) PutPessoa(id int, pessoaToUpdate models.Pessoa) (models
 		pessoaToUpdate.Email.String,
 		pessoaToUpdate.Telefone.String,
 		pessoaToUpdate.Cargo.String,
+		pessoaToUpdate.EnderecoRua.String,
+		pessoaToUpdate.EnderecoNumero.String,
+		pessoaToUpdate.EnderecoComplemento.String,
+		pessoaToUpdate.EnderecoBairro.String,
+		pessoaToUpdate.EnderecoCidade.String,
+		pessoaToUpdate.EnderecoEstado.String,
+		pessoaToUpdate.EnderecoCep.String,
 		pessoaToUpdate.Ativo.Bool,
 		time.Now(),
 		id, // The ID for the WHERE clause
@@ -151,6 +186,13 @@ func (pr PessoaServices) PutPessoa(id int, pessoaToUpdate models.Pessoa) (models
 		&updatedPessoa.Email,
 		&updatedPessoa.Telefone,
 		&updatedPessoa.Cargo,
+		&updatedPessoa.EnderecoRua,
+		&updatedPessoa.EnderecoNumero,
+		&updatedPessoa.EnderecoComplemento,
+		&updatedPessoa.EnderecoBairro,
+		&updatedPessoa.EnderecoCidade,
+		&updatedPessoa.EnderecoEstado,
+		&updatedPessoa.EnderecoCep,
 		&updatedPessoa.Ativo,
 		&updatedPessoa.CreatedAt,
 		&updatedPessoa.UpdatedAt,
