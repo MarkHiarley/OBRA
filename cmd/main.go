@@ -39,7 +39,9 @@ func main() {
 	usuarioController := controller.NewUsuarioController(usuarioUseCase)
 
 	diarioService := services.NewDiarioService(dbconnection)
-	diarioUseCase := usecases.NewDiarioUsecase(diarioService)
+
+	relatorioService := services.NewRelatorioService(dbconnection)
+	diarioUseCase := usecases.NewDiarioUsecase(diarioService, relatorioService, obraService, pessoaService)
 	diarioController := controller.NewDiarioController(diarioUseCase)
 
 	fornecedorService := services.NewFornecedorService(dbconnection)
@@ -54,13 +56,27 @@ func main() {
 	receitaUseCase := usecases.NewReceitaUseCase(receitaService, obraService)
 	receitaController := controller.NewReceitaController(receitaUseCase)
 
-	relatorioService := services.NewRelatorioService(dbconnection)
 	relatorioUseCase := usecases.NewRelatorioUseCase(relatorioService, obraService)
 	relatorioController := controller.NewRelatorioController(relatorioUseCase)
 
 	loginService := services.NewLoginService(dbconnection)
 	loginUseCase := usecases.NewLoginUsecase(loginService)
 	loginController := controller.NewLoginController(loginUseCase)
+
+	// Equipe do Diário
+	equipeDiarioService := services.NewEquipeDiarioService(dbconnection)
+	equipeDiarioUseCase := usecases.NewEquipeDiarioUseCase(equipeDiarioService)
+	equipeDiarioController := controller.NewEquipeDiarioController(equipeDiarioUseCase)
+
+	// Equipamento do Diário
+	equipamentoDiarioService := services.NewEquipamentoDiarioService(dbconnection)
+	equipamentoDiarioUseCase := usecases.NewEquipamentoDiarioUseCase(equipamentoDiarioService)
+	equipamentoDiarioController := controller.NewEquipamentoDiarioController(equipamentoDiarioUseCase)
+
+	// Material do Diário
+	materialDiarioService := services.NewMaterialDiarioService(dbconnection)
+	materialDiarioUseCase := usecases.NewMaterialDiarioUseCase(materialDiarioService)
+	materialDiarioController := controller.NewMaterialDiarioController(materialDiarioUseCase)
 
 	server := gin.Default()
 
@@ -100,8 +116,10 @@ func main() {
 		protected.GET("/obras/:id", obraController.GetObraById)
 
 		protected.GET("/diarios", diarioController.GetDiarios)
-		protected.GET("/diarios/:id", diarioController.GetDiarioById)
+		protected.GET("/diarios/relatorio-formatado/:obra_id", diarioController.GetDiarioRelatorioFormatado)
 		protected.GET("/diarios/obra/:id", diarioController.GetDiariosByObraId)
+		protected.GET("/diarios/:id/relatorio-completo", diarioController.GetRelatorioDiarioCompleto)
+		protected.GET("/diarios/:id", diarioController.GetDiarioById)
 
 		protected.GET("/fornecedores", fornecedorController.GetFornecedores)
 		protected.GET("/fornecedores/:id", fornecedorController.GetFornecedorById)
@@ -120,6 +138,24 @@ func main() {
 		protected.GET("/relatorios/pagamentos/:obra_id", relatorioController.GetRelatorioPagamentos) // ?status=PENDENTE opcional
 		protected.GET("/relatorios/materiais/:obra_id", relatorioController.GetRelatorioMateriais)
 		protected.GET("/relatorios/profissionais/:obra_id", relatorioController.GetRelatorioProfissionais)
+
+		// EQUIPE DIARIO
+		protected.POST("/equipe-diario", equipeDiarioController.Create)
+		protected.GET("/equipe-diario/diario/:diario_id", equipeDiarioController.GetByDiarioId)
+		protected.PUT("/equipe-diario/:id", equipeDiarioController.Update)
+		protected.DELETE("/equipe-diario/:id", equipeDiarioController.Delete)
+
+		// EQUIPAMENTO DIARIO
+		protected.POST("/equipamento-diario", equipamentoDiarioController.Create)
+		protected.GET("/equipamento-diario/diario/:diario_id", equipamentoDiarioController.GetByDiarioId)
+		protected.PUT("/equipamento-diario/:id", equipamentoDiarioController.Update)
+		protected.DELETE("/equipamento-diario/:id", equipamentoDiarioController.Delete)
+
+		// MATERIAL DIARIO
+		protected.POST("/material-diario", materialDiarioController.Create)
+		protected.GET("/material-diario/diario/:diario_id", materialDiarioController.GetByDiarioId)
+		protected.PUT("/material-diario/:id", materialDiarioController.Update)
+		protected.DELETE("/material-diario/:id", materialDiarioController.Delete)
 
 		// UPDATE (PUT)
 		protected.PUT("/usuarios/:id", usuarioController.PutUsuarioById)

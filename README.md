@@ -27,17 +27,20 @@ Pronto! A API está rodando em `http://localhost:9090` 🎉
 
 ---
 
-## � Funcionalidades
+## ✨ Funcionalidades
 
 O sistema OBRA oferece controle completo de obras com:
 
-- **🔐 Autenticação JWT** - Login seguro com tokens de acesso
+- **🔐 Autenticação JWT** - Login seguro com tokens de acesso e refresh
 - **👥 Pessoas** - Cadastro de profissionais e contratantes
 - **👤 Usuários** - Gestão de acesso ao sistema
 - **🏗️ Obras** - Controle de projetos e contratos
 - **📖 Diários de Obra** - Registro diário com suporte a fotos base64
-- **🏪 Fornecedores** - Cadastro de empresas e prestadores
-- **💰 Despesas** - Controle financeiro por categoria
+- **👷 Equipe do Diário** - � Controle de recursos humanos por atividade diária
+- **🚜 Equipamentos do Diário** - 🆕 Gestão de equipamentos e horas de uso
+- **🧱 Materiais do Diário** - 🆕 Registro de materiais consumidos por dia
+- **�🏪 Fornecedores** - Cadastro de empresas e prestadores com dados de contato
+- **💰 Despesas** - Controle financeiro por categoria com suporte a pessoas e fornecedores
 - **💵 Receitas** - Gestão de entradas e receitas das obras
 - **📊 Relatórios** - Dashboards financeiros e operacionais completos
 
@@ -210,6 +213,7 @@ Content-Type: application/json
 | `GET` | `/diarios` | Listar todos os diários |
 | `GET` | `/diarios/:id` | Buscar diário por ID |
 | `GET` | `/diarios/obra/:id` | Buscar diários por obra |
+| `GET` | `/diarios/relatorio-formatado/:obra_id` | 📊 Relatório completo formatado da obra |
 | `POST` | `/diarios` | Criar novo diário |
 | `PUT` | `/diarios/:id` | Atualizar diário |
 | `DELETE` | `/diarios/:id` | Deletar diário |
@@ -448,13 +452,16 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 Base URL: `http://localhost:9090`
 
-### � Índice de Endpoints
+### 📚 Índice de Endpoints
 
-- [� Autenticação](#-autenticação) - Login e renovação de tokens JWT
-- [�👥 Pessoas](#-pessoas) - Gerenciamento de pessoas (contratantes, profissionais)
+- [🔐 Autenticação](#-autenticação) - Login e renovação de tokens JWT
+- [👥 Pessoas](#-pessoas) - Gerenciamento de pessoas (contratantes, profissionais)
 - [👤 Usuários](#-usuários) - Gerenciamento de usuários do sistema
 - [🏗️ Obras](#️-obras) - Gerenciamento de obras e contratos
 - [📖 Diários de Obra](#-diários-de-obra) - Registro diário de atividades (com suporte a fotos base64)
+- [👷 Equipe do Diário](#-equipe-do-diário) - 🆕 Gestão de equipe por diário de obra
+- [🚜 Equipamentos do Diário](#-equipamentos-do-diário) - 🆕 Controle de equipamentos utilizados
+- [🧱 Materiais do Diário](#-materiais-do-diário) - 🆕 Registro de materiais consumidos
 - [🏪 Fornecedores](#-fornecedores) - Gerenciamento de fornecedores e prestadores
 - [💰 Despesas](#-despesas) - Controle financeiro e relatórios
 - [💵 Receitas](#-receitas) - Gerenciamento de receitas e entradas financeiras das obras
@@ -1294,6 +1301,137 @@ GET /diarios/obra/:id
 }
 ```
 
+#### Relatório de Diário Formatado
+```http
+GET /diarios/relatorio-formatado/:obra_id
+```
+
+**Descrição:** Retorna um relatório completo e formatado de todos os diários de uma obra, incluindo informações da obra, tarefas realizadas, ocorrências, equipe, equipamentos, materiais e fotos.
+
+**Parâmetros:**
+- `obra_id` (path): ID da obra
+
+**Resposta (200 OK):**
+```json
+{
+  "data": {
+    "informacoes_obra": {
+      "titulo": "Casa Residencial - Fortaleza",
+      "numero_contrato": "CONTR-2024-001",
+      "contratante": "João Silva",
+      "prazo_obra": "180 DIAS",
+      "tempo_decorrido": "30 DIAS",
+      "contratada": "Construtora ABC LTDA",
+      "responsavel_tecnico": "Eng. Maria Santos",
+      "registro_profissional": "CREA-CE 12345"
+    },
+    "tarefas_realizadas": [
+      {
+        "descricao": "Concretagem da fundação",
+        "data": "2025-11-07T00:00:00Z"
+      },
+      {
+        "descricao": "Instalação de tubulações",
+        "data": "2025-11-08T00:00:00Z"
+      }
+    ],
+    "ocorrencias": [
+      {
+        "descricao": "Chuva no período da tarde",
+        "tipo": "CLIMA"
+      },
+      {
+        "descricao": "Atraso na entrega de materiais",
+        "tipo": "LOGISTICA"
+      }
+    ],
+    "equipe_envolvida": [
+      {
+        "codigo": "EQ001",
+        "descricao": "Pedreiro",
+        "quantidade": 2,
+        "horas_trabalhadas": 8.0
+      },
+      {
+        "codigo": "EQ002",
+        "descricao": "Servente",
+        "quantidade": 3,
+        "horas_trabalhadas": 8.0
+      }
+    ],
+    "equipamentos_utilizados": [
+      {
+        "codigo": "BT001",
+        "descricao": "Betoneira 400L",
+        "quantidade": 1,
+        "horas_uso": 6.0
+      },
+      {
+        "codigo": "VS001",
+        "descricao": "Vibrador de concreto",
+        "quantidade": 1,
+        "horas_uso": 4.0
+      }
+    ],
+    "materiais_utilizados": [
+      {
+        "codigo": "CIM001",
+        "descricao": "Cimento CP-II",
+        "quantidade": 50,
+        "unidade": "saco",
+        "valor_total": 1775.00
+      },
+      {
+        "codigo": "ARE001",
+        "descricao": "Areia média",
+        "quantidade": 10,
+        "unidade": "m³",
+        "valor_total": 800.00
+      }
+    ],
+    "fotos": [
+      {
+        "id": 8,
+        "url": "data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
+        "descricao": "Fundação concluída",
+        "timestamp": "2025-11-08T00:00:00Z",
+        "local_foto": "Área da fundação",
+        "categoria": "DIARIO"
+      }
+    ],
+    "responsavel_empresa": {
+      "nome": "Eng. Maria Santos",
+      "cargo": "Responsável Técnico",
+      "documento": "CREA-CE 12345",
+      "empresa": "Construtora ABC LTDA"
+    },
+    "responsavel_prefeitura": {
+      "nome": "Fiscal João Pedro",
+      "cargo": "Fiscal da Obra",
+      "documento": "Matrícula 54321",
+      "empresa": "Prefeitura Municipal"
+    }
+  }
+}
+```
+
+**Características do Relatório:**
+- ✅ Informações completas da obra (contrato, prazos, responsáveis)
+- ✅ Lista consolidada de todas as tarefas realizadas nos diários
+- ✅ Todas as ocorrências registradas
+- ✅ Equipe envolvida agregada (código, função, quantidade, horas)
+- ✅ Equipamentos utilizados agregados (código, descrição, quantidade, horas de uso)
+- ✅ Materiais consumidos agregados (código, descrição, quantidade total, valor)
+- ✅ Fotos de todos os diários em formato base64
+- ✅ Dados dos responsáveis técnicos
+
+**Casos de Uso:**
+- Geração de relatórios executivos para clientes
+- Documentação completa do progresso da obra
+- Auditorias e fiscalizações
+- Controle de recursos utilizados (equipe, equipamentos, materiais)
+- Registro fotográfico cronológico da obra
+
 #### Criar novo diário
 ```http
 POST /diarios
@@ -2094,7 +2232,404 @@ DELETE /receitas/:id
 
 ---
 
-### 📊 Relatórios
+### � Equipe do Diário
+
+> 🆕 **Nova Funcionalidade**: Gestão completa da equipe envolvida em cada diário de obra, permitindo controle detalhado de recursos humanos e horas trabalhadas por atividade.
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `POST` | `/equipe-diario` | Adicionar membro à equipe do diário |
+| `GET` | `/equipe-diario/diario/:diario_id` | Listar equipe por diário |
+| `PUT` | `/equipe-diario/:id` | Atualizar registro de equipe |
+| `DELETE` | `/equipe-diario/:id` | Remover membro da equipe |
+
+#### Adicionar membro à equipe
+```http
+POST /equipe-diario
+```
+
+**Body:**
+```json
+{
+  "diario_id": 7,
+  "codigo": "EQ001",
+  "descricao": "Pedreiro",
+  "quantidade_utilizada": 2,
+  "horas_trabalhadas": 8.0,
+  "observacoes": "Trabalho na fundação"
+}
+```
+
+**Resposta (201 Created):**
+```json
+{
+  "message": "Equipe criada com sucesso",
+  "data": {
+    "id": 2,
+    "diario_id": 7,
+    "codigo": "EQ001",
+    "descricao": "Pedreiro",
+    "quantidade_utilizada": 2,
+    "horas_trabalhadas": 8,
+    "observacoes": "Trabalho na fundação",
+    "created_at": "2025-11-13T18:43:27.945284Z",
+    "updated_at": null
+  }
+}
+```
+
+#### Listar equipe por diário
+```http
+GET /equipe-diario/diario/:diario_id
+```
+
+**Parâmetros:**
+- `diario_id` (path): ID do diário
+
+**Resposta (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": 2,
+      "diario_id": 7,
+      "codigo": "EQ001",
+      "descricao": "Pedreiro",
+      "quantidade_utilizada": 2,
+      "horas_trabalhadas": 8,
+      "observacoes": "Trabalho na fundação",
+      "created_at": "2025-11-13T18:43:27.945284Z",
+      "updated_at": null
+    }
+  ]
+}
+```
+
+#### Atualizar registro de equipe
+```http
+PUT /equipe-diario/:id
+```
+
+**Parâmetros:**
+- `id` (path): ID do registro de equipe
+
+**Body:**
+```json
+{
+  "horas_trabalhadas": 9.0,
+  "observacoes": "Trabalho na fundação - Horas extras"
+}
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "data": {
+    "id": 2,
+    "diario_id": 7,
+    "codigo": "EQ001",
+    "descricao": "Pedreiro",
+    "quantidade_utilizada": 2,
+    "horas_trabalhadas": 9,
+    "observacoes": "Trabalho na fundação - Horas extras",
+    "created_at": "2025-11-13T18:43:27.945284Z",
+    "updated_at": "2025-11-13T15:45:31.279669Z"
+  }
+}
+```
+
+#### Remover membro da equipe
+```http
+DELETE /equipe-diario/:id
+```
+
+**Parâmetros:**
+- `id` (path): ID do registro de equipe
+
+**Resposta (204 No Content):**
+```
+(sem corpo de resposta)
+```
+
+**Resposta de Erro (404 Not Found):**
+```json
+{
+  "error": "Equipe não encontrada"
+}
+```
+
+---
+
+### 🚜 Equipamentos do Diário
+
+> 🆕 **Nova Funcionalidade**: Controle de equipamentos utilizados em cada diário de obra, permitindo rastreamento de horas de uso e quantidade de equipamentos por atividade.
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `POST` | `/equipamento-diario` | Registrar equipamento utilizado |
+| `GET` | `/equipamento-diario/diario/:diario_id` | Listar equipamentos por diário |
+| `PUT` | `/equipamento-diario/:id` | Atualizar registro de equipamento |
+| `DELETE` | `/equipamento-diario/:id` | Remover equipamento |
+
+#### Registrar equipamento utilizado
+```http
+POST /equipamento-diario
+```
+
+**Body:**
+```json
+{
+  "diario_id": 7,
+  "codigo": "BT001",
+  "descricao": "Betoneira 400L",
+  "quantidade_utilizada": 1,
+  "horas_uso": 6.0,
+  "observacoes": "Preparação de concreto"
+}
+```
+
+**Resposta (201 Created):**
+```json
+{
+  "message": "Equipamento criado com sucesso",
+  "data": {
+    "id": 1,
+    "diario_id": 7,
+    "codigo": "BT001",
+    "descricao": "Betoneira 400L",
+    "quantidade_utilizada": 1,
+    "horas_uso": 6,
+    "observacoes": "Preparação de concreto",
+    "created_at": "2025-11-13T18:43:42.532351Z",
+    "updated_at": null
+  }
+}
+```
+
+#### Listar equipamentos por diário
+```http
+GET /equipamento-diario/diario/:diario_id
+```
+
+**Parâmetros:**
+- `diario_id` (path): ID do diário
+
+**Resposta (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "diario_id": 7,
+      "codigo": "BT001",
+      "descricao": "Betoneira 400L",
+      "quantidade_utilizada": 1,
+      "horas_uso": 6,
+      "observacoes": "Preparação de concreto",
+      "created_at": "2025-11-13T18:43:42.532351Z",
+      "updated_at": null
+    }
+  ]
+}
+```
+
+#### Atualizar registro de equipamento
+```http
+PUT /equipamento-diario/:id
+```
+
+**Parâmetros:**
+- `id` (path): ID do registro de equipamento
+
+**Body:**
+```json
+{
+  "horas_uso": 8.0,
+  "observacoes": "Preparação de concreto - Uso estendido"
+}
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "data": {
+    "id": 1,
+    "diario_id": 7,
+    "codigo": "BT001",
+    "descricao": "Betoneira 400L",
+    "quantidade_utilizada": 1,
+    "horas_uso": 8,
+    "observacoes": "Preparação de concreto - Uso estendido",
+    "created_at": "2025-11-13T18:43:42.532351Z",
+    "updated_at": "2025-11-13T16:30:00.123456Z"
+  }
+}
+```
+
+#### Remover equipamento
+```http
+DELETE /equipamento-diario/:id
+```
+
+**Parâmetros:**
+- `id` (path): ID do registro de equipamento
+
+**Resposta (204 No Content):**
+```
+(sem corpo de resposta)
+```
+
+**Resposta de Erro (404 Not Found):**
+```json
+{
+  "error": "Equipamento não encontrado"
+}
+```
+
+---
+
+### 🧱 Materiais do Diário
+
+> 🆕 **Nova Funcionalidade**: Registro de materiais consumidos em cada diário de obra, permitindo controle preciso de insumos, quantidades e valores por atividade diária.
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `POST` | `/material-diario` | Registrar material utilizado |
+| `GET` | `/material-diario/diario/:diario_id` | Listar materiais por diário |
+| `PUT` | `/material-diario/:id` | Atualizar registro de material |
+| `DELETE` | `/material-diario/:id` | Remover material |
+
+#### Registrar material utilizado
+```http
+POST /material-diario
+```
+
+**Body:**
+```json
+{
+  "diario_id": 7,
+  "codigo": "CIM001",
+  "descricao": "Cimento CP-II",
+  "quantidade": 10,
+  "unidade": "saco",
+  "fornecedor": "Materiais Silva",
+  "valor_unitario": 35.50,
+  "valor_total": 355.00,
+  "observacoes": "Para fundação"
+}
+```
+
+**Resposta (201 Created):**
+```json
+{
+  "message": "Material criado com sucesso",
+  "data": {
+    "id": 1,
+    "diario_id": 7,
+    "codigo": "CIM001",
+    "descricao": "Cimento CP-II",
+    "quantidade": 10,
+    "unidade": "saco",
+    "fornecedor": "Materiais Silva",
+    "valor_unitario": 35.50,
+    "valor_total": 355.00,
+    "observacoes": "Para fundação",
+    "created_at": "2025-11-13T18:43:53.550195Z",
+    "updated_at": null
+  }
+}
+```
+
+#### Listar materiais por diário
+```http
+GET /material-diario/diario/:diario_id
+```
+
+**Parâmetros:**
+- `diario_id` (path): ID do diário
+
+**Resposta (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "diario_id": 7,
+      "codigo": "CIM001",
+      "descricao": "Cimento CP-II",
+      "quantidade": 10,
+      "unidade": "saco",
+      "fornecedor": "Materiais Silva",
+      "valor_unitario": 35.50,
+      "valor_total": 355.00,
+      "observacoes": "Para fundação",
+      "created_at": "2025-11-13T18:43:53.550195Z",
+      "updated_at": null
+    }
+  ]
+}
+```
+
+#### Atualizar registro de material
+```http
+PUT /material-diario/:id
+```
+
+**Parâmetros:**
+- `id` (path): ID do registro de material
+
+**Body:**
+```json
+{
+  "quantidade": 12,
+  "valor_total": 426.00,
+  "observacoes": "Para fundação - Quantidade ajustada"
+}
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "data": {
+    "id": 1,
+    "diario_id": 7,
+    "codigo": "CIM001",
+    "descricao": "Cimento CP-II",
+    "quantidade": 12,
+    "unidade": "saco",
+    "fornecedor": "Materiais Silva",
+    "valor_unitario": 35.50,
+    "valor_total": 426.00,
+    "observacoes": "Para fundação - Quantidade ajustada",
+    "created_at": "2025-11-13T18:43:53.550195Z",
+    "updated_at": "2025-11-13T17:00:00.000000Z"
+  }
+}
+```
+
+#### Remover material
+```http
+DELETE /material-diario/:id
+```
+
+**Parâmetros:**
+- `id` (path): ID do registro de material
+
+**Resposta (204 No Content):**
+```
+(sem corpo de resposta)
+```
+
+**Resposta de Erro (404 Not Found):**
+```json
+{
+  "error": "Material não encontrado"
+}
+```
+
+---
+
+### �📊 Relatórios
 
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|

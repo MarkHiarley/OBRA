@@ -56,10 +56,10 @@ func (pu *ObraUseCase) PutObra(id int, updatedObra models.Obra) (models.Obra, er
 func (pu *ObraUseCase) DeleteObraById(id int) error {
 	err := pu.services.DeleteObraById(id)
 	if err != nil {
-		// ✅ CORRETO: Comparar a MENSAGEM do erro, não o objeto
+
 		switch err.Error() {
 		case "nenhuma obra encontrada com o ID fornecido":
-			return fmt.Errorf("Obra não encontrada")
+			return fmt.Errorf("obra não encontrada")
 		case "erro ao executar a query de delete":
 			return fmt.Errorf("erro ao executar operação de delete: %w", err)
 		case "erro ao obter linhas afetadas":

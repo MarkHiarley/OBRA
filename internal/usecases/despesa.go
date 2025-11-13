@@ -82,7 +82,6 @@ func (du *DespesaUseCase) CreateDespesa(newDespesa models.Despesa) (models.Despe
 		return models.Despesa{}, err
 	}
 
-	// Converte DespesaComRelacionamentos para Despesa
 	newDespesa.ID.Int64 = despesaCompleta.ID.Int64
 	newDespesa.ID.Valid = despesaCompleta.ID.Valid
 	newDespesa.CreatedAt = despesaCompleta.CreatedAt

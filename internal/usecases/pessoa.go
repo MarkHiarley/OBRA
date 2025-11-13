@@ -59,7 +59,7 @@ func (pu *PessoaUseCase) DeletePessoaById(id int) error {
 		// ✅ CORRETO: Comparar a MENSAGEM do erro, não o objeto
 		switch err.Error() {
 		case "nenhuma pessoa encontrada com o ID fornecido":
-			return fmt.Errorf("Pessoa não encontrada")
+			return fmt.Errorf("pessoa não encontrada")
 		case "erro ao executar a query de delete":
 			return fmt.Errorf("erro ao executar operação de delete: %w", err)
 		case "erro ao obter linhas afetadas":

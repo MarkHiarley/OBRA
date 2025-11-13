@@ -278,7 +278,7 @@ func (fs *FornecedorServices) DeleteFornecedorById(id int) error {
 
 // GetFornecedoresAtivos retorna apenas fornecedores ativos
 func (fs *FornecedorServices) GetFornecedoresAtivos() ([]models.Fornecedor, error) {
-	query := `SELECT id, nome, tipo_documento, documento, email, telefone, endereco, cidade, estado, ativo, created_at, updated_at 
+	query := `SELECT id, nome, tipo_documento, documento, email, telefone, endereco, cidade, estado, contato_nome, contato_telefone, contato_email, ativo, created_at, updated_at 
 	          FROM fornecedor 
 	          WHERE ativo = true
 	          ORDER BY nome`
@@ -304,6 +304,9 @@ func (fs *FornecedorServices) GetFornecedoresAtivos() ([]models.Fornecedor, erro
 			&fornecedor.Endereco,
 			&fornecedor.Cidade,
 			&fornecedor.Estado,
+			&fornecedor.ContatoNome,
+			&fornecedor.ContatoTelefone,
+			&fornecedor.ContatoEmail,
 			&fornecedor.Ativo,
 			&fornecedor.CreatedAt,
 			&fornecedor.UpdatedAt,

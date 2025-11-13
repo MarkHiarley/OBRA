@@ -261,3 +261,64 @@ func (p *DiarioController) DeleteDiariosById(ctx *gin.Context) {
 	// ✅ Sucesso - DELETE retorna 204 No Content
 	ctx.JSON(http.StatusNoContent, nil)
 }
+
+// GetRelatorioDiarioCompleto retorna relatório completo de um diário
+func (p *DiarioController) GetRelatorioDiarioCompleto(ctx *gin.Context) {
+	id := ctx.Param("id")
+	idNumero, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
+		return
+	}
+
+	relatorio, err := p.DiarioUseCase.GetRelatorioDiarioCompleto(idNumero)
+	if err != nil {
+		if err.Error() == "Diário não encontrado" {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "Diário não encontrado"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao gerar relatório"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, relatorio)
+}
+
+// GetDiarioRelatorioFormatado retorna relatório de diário de obra formatado para impressão
+func (p *DiarioController) GetDiarioRelatorioFormatado(ctx *gin.Context) {
+	obraIdStr := ctx.Param("obra_id")
+
+	if obraIdStr == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "obra_id é obrigatório",
+		})
+		return
+	}
+
+	obraId, err := strconv.ParseInt(obraIdStr, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "obra_id deve ser um número válido",
+		})
+		return
+	}
+
+	relatorio, err := p.DiarioUseCase.GetDiarioRelatorioFormatado(obraId)
+	if err != nil {
+		if err.Error() == "nenhum diário encontrado para a obra" {
+			ctx.JSON(http.StatusNotFound, gin.H{
+				"error": "Nenhum diário encontrado para esta obra",
+			})
+			return
+		}
+
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Erro ao gerar relatório: " + err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"data": relatorio,
+	})
+}

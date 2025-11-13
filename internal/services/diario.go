@@ -297,3 +297,126 @@ func (pr *DiarioServices) DeleteDiarioById(id int) error {
 
 	return nil
 }
+
+// GetEquipeByObraId busca a equipe utilizada em uma obra
+func (pr *DiarioServices) GetEquipeByObraId(obraId int64) ([]map[string]interface{}, error) {
+	query := `
+		SELECT ed.codigo, ed.descricao, SUM(ed.quantidade_utilizada) as quantidade_utilizada
+		FROM equipe_diario ed
+		INNER JOIN diario_obra do ON ed.diario_id = do.id
+		WHERE do.obra_id = $1
+		GROUP BY ed.codigo, ed.descricao
+		ORDER BY ed.descricao
+	`
+
+	rows, err := pr.connection.Query(query, obraId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var equipe []map[string]interface{}
+	for rows.Next() {
+		var codigo sql.NullString
+		var descricao string
+		var quantidade int
+
+		if err := rows.Scan(&codigo, &descricao, &quantidade); err != nil {
+			return nil, err
+		}
+
+		item := map[string]interface{}{
+			"codigo":               codigo.String,
+			"descricao":            descricao,
+			"quantidade_utilizada": quantidade,
+		}
+		equipe = append(equipe, item)
+	}
+
+	return equipe, nil
+}
+
+// GetEquipamentosByObraId busca os equipamentos utilizados em uma obra
+func (pr *DiarioServices) GetEquipamentosByObraId(obraId int64) ([]map[string]interface{}, error) {
+	query := `
+		SELECT eqd.codigo, eqd.descricao, SUM(eqd.quantidade_utilizada) as quantidade_utilizada
+		FROM equipamento_diario eqd
+		INNER JOIN diario_obra do ON eqd.diario_id = do.id
+		WHERE do.obra_id = $1
+		GROUP BY eqd.codigo, eqd.descricao
+		ORDER BY eqd.descricao
+	`
+
+	rows, err := pr.connection.Query(query, obraId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var equipamentos []map[string]interface{}
+	for rows.Next() {
+		var codigo sql.NullString
+		var descricao string
+		var quantidade int
+
+		if err := rows.Scan(&codigo, &descricao, &quantidade); err != nil {
+			return nil, err
+		}
+
+		item := map[string]interface{}{
+			"codigo":               codigo.String,
+			"descricao":            descricao,
+			"quantidade_utilizada": quantidade,
+		}
+		equipamentos = append(equipamentos, item)
+	}
+
+	return equipamentos, nil
+}
+
+// GetMateriaisByObraId busca os materiais utilizados em uma obra
+func (pr *DiarioServices) GetMateriaisByObraId(obraId int64) ([]map[string]interface{}, error) {
+	query := `
+		SELECT md.codigo, md.descricao, SUM(md.quantidade) as quantidade, md.unidade,
+		       md.fornecedor, AVG(md.valor_unitario) as valor_unitario, SUM(md.valor_total) as valor_total
+		FROM material_diario md
+		INNER JOIN diario_obra do ON md.diario_id = do.id
+		WHERE do.obra_id = $1
+		GROUP BY md.codigo, md.descricao, md.unidade, md.fornecedor
+		ORDER BY md.descricao
+	`
+
+	rows, err := pr.connection.Query(query, obraId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var materiais []map[string]interface{}
+	for rows.Next() {
+		var codigo sql.NullString
+		var descricao string
+		var quantidade float64
+		var unidade string
+		var fornecedor sql.NullString
+		var valorUnitario sql.NullFloat64
+		var valorTotal sql.NullFloat64
+
+		if err := rows.Scan(&codigo, &descricao, &quantidade, &unidade, &fornecedor, &valorUnitario, &valorTotal); err != nil {
+			return nil, err
+		}
+
+		item := map[string]interface{}{
+			"codigo":         codigo.String,
+			"descricao":      descricao,
+			"quantidade":     quantidade,
+			"unidade":        unidade,
+			"fornecedor":     fornecedor.String,
+			"valor_unitario": valorUnitario.Float64,
+			"valor_total":    valorTotal.Float64,
+		}
+		materiais = append(materiais, item)
+	}
+
+	return materiais, nil
+}

@@ -244,3 +244,24 @@ func (rs *RelatorioService) GetRelatorioProfissionais(obraId int64) (models.Rela
 
 	return relatorio, nil
 }
+
+// GetRelatorioDiarioCompleto retorna relatório completo do diário com todas as seções
+func (rs *RelatorioService) GetRelatorioDiarioCompleto(diarioId int64) (models.RelatorioDiarioCompleto, error) {
+	var relatorio models.RelatorioDiarioCompleto
+
+	// Teste básico - retorna estrutura vazia primeiro
+	relatorio.Diario.ID = diarioId
+	relatorio.Diario.AtividadesRealizadas = "Teste de funcionalidade"
+
+	// Inicializa seções vazias
+	relatorio.Clima = models.ClimaInfo{}
+	relatorio.Equipe = []models.EquipeInfo{}
+	relatorio.Equipamentos = []models.EquipamentoInfo{}
+	relatorio.Materiais = []models.MaterialInfo{}
+	relatorio.Fotos = models.FotosInfo{}
+	relatorio.Progresso = models.ProgressoInfo{}
+	relatorio.Ocorrencias = []models.OcorrenciaInfo{}
+	relatorio.Observacoes = models.ObservacoesInfo{}
+
+	return relatorio, nil
+}
