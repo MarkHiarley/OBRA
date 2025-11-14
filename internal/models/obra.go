@@ -9,6 +9,7 @@ type Obra struct {
 	Nome            null.String `json:"nome"`
 	ContratoNumero  null.String `json:"contrato_numero"`
 	ContratanteID   null.Int    `json:"contratante_id"`
+	Contratada      null.String `json:"contratada,omitempty"`
 	ResponsavelID   null.Int    `json:"responsavel_id,omitempty"`
 	DataInicio      null.String `json:"data_inicio"`
 	PrazoDias       null.Int    `json:"prazo_dias"`

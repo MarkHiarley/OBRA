@@ -26,6 +26,7 @@ type Receita struct {
 	NumeroDocumento null.String `json:"numero_documento,omitempty"` // Número do contrato, nota fiscal, etc
 	ResponsavelID   null.Int    `json:"responsavel_id,omitempty"`
 	Observacao      null.String `json:"observacao,omitempty"`
+	Status          null.String `json:"status,omitempty"`
 	CreatedAt       time.Time   `json:"created_at"`
 	UpdatedAt       time.Time   `json:"updated_at"`
 }

@@ -50,6 +50,11 @@ func (ruc *ReceitaUseCase) CreateReceita(receita models.Receita) (models.Receita
 		receita.Data = null.TimeFrom(time.Now())
 	}
 
+	// Definir status padrão
+	if !receita.Status.Valid {
+		receita.Status = null.StringFrom("a_receber")
+	}
+
 	// Criar a receita
 	receitaCriada, err := ruc.receitaService.CreateReceita(receita)
 	if err != nil {

@@ -18,9 +18,9 @@ func NewReceitaService(connection *sql.DB) ReceitaService {
 
 func (rs *ReceitaService) CreateReceita(receita models.Receita) (models.Receita, error) {
 	query := `
-		INSERT INTO receitas (obra_id, descricao, valor, data, fonte_receita, numero_documento, responsavel_id, observacao)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		RETURNING id, created_at, updated_at
+		INSERT INTO receitas (obra_id, descricao, valor, data, status, fonte_receita, numero_documento, responsavel_id, observacao)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		RETURNING id, status, created_at, updated_at
 	`
 
 	err := rs.connection.QueryRow(
@@ -29,11 +29,12 @@ func (rs *ReceitaService) CreateReceita(receita models.Receita) (models.Receita,
 		receita.Descricao,
 		receita.Valor,
 		receita.Data,
+		receita.Status,
 		receita.FonteReceita,
 		receita.NumeroDocumento,
 		receita.ResponsavelID,
 		receita.Observacao,
-	).Scan(&receita.ID, &receita.CreatedAt, &receita.UpdatedAt)
+	).Scan(&receita.ID, &receita.Status, &receita.CreatedAt, &receita.UpdatedAt)
 
 	if err != nil {
 		return models.Receita{}, fmt.Errorf("erro ao criar receita: %v", err)
@@ -44,9 +45,9 @@ func (rs *ReceitaService) CreateReceita(receita models.Receita) (models.Receita,
 
 func (rs *ReceitaService) GetReceitas() ([]models.ReceitaComRelacionamentos, error) {
 	query := `
-		SELECT r.id, r.obra_id, r.descricao, r.valor, r.data, r.fonte_receita, 
-		       r.numero_documento, r.responsavel_id, r.observacao, r.created_at, r.updated_at,
-		       o.nome as obra_nome, p.nome as responsavel_nome
+		SELECT r.id, r.obra_id, r.descricao, r.valor, r.data, r.status, r.fonte_receita, 
+			   r.numero_documento, r.responsavel_id, r.observacao, r.created_at, r.updated_at,
+			   o.nome as obra_nome, p.nome as responsavel_nome
 		FROM receitas r
 		LEFT JOIN obra o ON r.obra_id = o.id
 		LEFT JOIN pessoa p ON r.responsavel_id = p.id
@@ -64,7 +65,7 @@ func (rs *ReceitaService) GetReceitas() ([]models.ReceitaComRelacionamentos, err
 		var receita models.ReceitaComRelacionamentos
 		err := rows.Scan(
 			&receita.ID, &receita.ObraID, &receita.Descricao, &receita.Valor,
-			&receita.Data, &receita.FonteReceita, &receita.NumeroDocumento,
+			&receita.Data, &receita.Status, &receita.FonteReceita, &receita.NumeroDocumento,
 			&receita.ResponsavelID, &receita.Observacao, &receita.CreatedAt,
 			&receita.UpdatedAt, &receita.ObraNome, &receita.ResponsavelNome,
 		)
@@ -79,9 +80,9 @@ func (rs *ReceitaService) GetReceitas() ([]models.ReceitaComRelacionamentos, err
 
 func (rs *ReceitaService) GetReceitaById(id int) (models.ReceitaComRelacionamentos, error) {
 	query := `
-		SELECT r.id, r.obra_id, r.descricao, r.valor, r.data, r.fonte_receita, 
-		       r.numero_documento, r.responsavel_id, r.observacao, r.created_at, r.updated_at,
-		       o.nome as obra_nome, p.nome as responsavel_nome
+		SELECT r.id, r.obra_id, r.descricao, r.valor, r.data, r.status, r.fonte_receita, 
+			   r.numero_documento, r.responsavel_id, r.observacao, r.created_at, r.updated_at,
+			   o.nome as obra_nome, p.nome as responsavel_nome
 		FROM receitas r
 		LEFT JOIN obra o ON r.obra_id = o.id
 		LEFT JOIN pessoa p ON r.responsavel_id = p.id
@@ -91,7 +92,7 @@ func (rs *ReceitaService) GetReceitaById(id int) (models.ReceitaComRelacionament
 	var receita models.ReceitaComRelacionamentos
 	err := rs.connection.QueryRow(query, id).Scan(
 		&receita.ID, &receita.ObraID, &receita.Descricao, &receita.Valor,
-		&receita.Data, &receita.FonteReceita, &receita.NumeroDocumento,
+		&receita.Data, &receita.Status, &receita.FonteReceita, &receita.NumeroDocumento,
 		&receita.ResponsavelID, &receita.Observacao, &receita.CreatedAt,
 		&receita.UpdatedAt, &receita.ObraNome, &receita.ResponsavelNome,
 	)
@@ -106,14 +107,14 @@ func (rs *ReceitaService) GetReceitaById(id int) (models.ReceitaComRelacionament
 func (rs *ReceitaService) UpdateReceita(id int, receita models.Receita) error {
 	query := `
 		UPDATE receitas 
-		SET obra_id = $2, descricao = $3, valor = $4, data = $5, fonte_receita = $6,
-		    numero_documento = $7, responsavel_id = $8, observacao = $9, updated_at = CURRENT_TIMESTAMP
+		SET obra_id = $2, descricao = $3, valor = $4, data = $5, status = $6, fonte_receita = $7,
+			numero_documento = $8, responsavel_id = $9, observacao = $10, updated_at = CURRENT_TIMESTAMP
 		WHERE id = $1
 	`
 
 	result, err := rs.connection.Exec(
 		query, id, receita.ObraID, receita.Descricao, receita.Valor, receita.Data,
-		receita.FonteReceita, receita.NumeroDocumento, receita.ResponsavelID, receita.Observacao,
+		receita.Status, receita.FonteReceita, receita.NumeroDocumento, receita.ResponsavelID, receita.Observacao,
 	)
 
 	if err != nil {
@@ -147,9 +148,9 @@ func (rs *ReceitaService) DeleteReceita(id int) error {
 // GetReceitasByObra retorna receitas filtradas por obra
 func (rs *ReceitaService) GetReceitasByObra(obraId int) ([]models.ReceitaComRelacionamentos, error) {
 	query := `
-		SELECT r.id, r.obra_id, r.descricao, r.valor, r.data, r.fonte_receita, 
-		       r.numero_documento, r.responsavel_id, r.observacao, r.created_at, r.updated_at,
-		       o.nome as obra_nome, p.nome as responsavel_nome
+		SELECT r.id, r.obra_id, r.descricao, r.valor, r.data, r.status, r.fonte_receita, 
+			   r.numero_documento, r.responsavel_id, r.observacao, r.created_at, r.updated_at,
+			   o.nome as obra_nome, p.nome as responsavel_nome
 		FROM receitas r
 		LEFT JOIN obra o ON r.obra_id = o.id
 		LEFT JOIN pessoa p ON r.responsavel_id = p.id
@@ -168,7 +169,7 @@ func (rs *ReceitaService) GetReceitasByObra(obraId int) ([]models.ReceitaComRela
 		var receita models.ReceitaComRelacionamentos
 		err := rows.Scan(
 			&receita.ID, &receita.ObraID, &receita.Descricao, &receita.Valor,
-			&receita.Data, &receita.FonteReceita, &receita.NumeroDocumento,
+			&receita.Data, &receita.Status, &receita.FonteReceita, &receita.NumeroDocumento,
 			&receita.ResponsavelID, &receita.Observacao, &receita.CreatedAt,
 			&receita.UpdatedAt, &receita.ObraNome, &receita.ResponsavelNome,
 		)

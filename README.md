@@ -458,7 +458,11 @@ Base URL: `http://localhost:9090`
 - [👥 Pessoas](#-pessoas) - Gerenciamento de pessoas (contratantes, profissionais)
 - [👤 Usuários](#-usuários) - Gerenciamento de usuários do sistema
 - [🏗️ Obras](#️-obras) - Gerenciamento de obras e contratos
-- [📖 Diários de Obra](#-diários-de-obra) - Registro diário de atividades (com suporte a fotos base64)
+- [🏗️ Nova Arquitetura do Diário de Obras](#️-nova-arquitetura-do-diário-de-obras) - 🆕 **Refatoração Completa**
+  - [📋 Atividades Diárias](#-atividades-diárias) - Registro individual de atividades
+  - [⚠️ Ocorrências Diárias](#️-ocorrências-diárias) - Gestão de problemas e eventos
+  - [📊 Diário Consolidado](#-diário-consolidado) - View dinâmica com agregação
+- [📖 Diários de Obra (Legado)](#-diários-de-obra-legado) - Endpoints mantidos para compatibilidade
 - [👷 Equipe do Diário](#-equipe-do-diário) - 🆕 Gestão de equipe por diário de obra
 - [🚜 Equipamentos do Diário](#-equipamentos-do-diário) - 🆕 Controle de equipamentos utilizados
 - [🧱 Materiais do Diário](#-materiais-do-diário) - 🆕 Registro de materiais consumidos
@@ -1202,7 +1206,828 @@ DELETE /obras/:id
 
 ---
 
-### 📖 Diários de Obra
+## 🏗️ Nova Arquitetura do Diário de Obras
+
+> 🔄 **Refatoração Completa**: O sistema foi refatorado para uma arquitetura normalizada onde o diário de obras é gerado dinamicamente a partir de dados normalizados de atividades e ocorrências.
+
+### � Estrutura da Nova Arquitetura
+
+A nova arquitetura divide o diário em **3 tabelas normalizadas** + **1 view de consolidação**:
+
+1. **`atividade_diaria`** - Registros individuais de atividades realizadas
+2. **`ocorrencia_diaria`** - Registros individuais de problemas/eventos
+3. **`diario_metadados`** - Dados complementares (foto, observações gerais, aprovação)
+4. **`vw_diario_consolidado`** - View que agrega tudo dinamicamente
+
+### ✅ Benefícios da Nova Arquitetura
+
+- ✅ **Dados Normalizados**: Eliminação de duplicação de dados
+- ✅ **Queries Específicas**: Consultar apenas atividades ou apenas ocorrências
+- ✅ **Filtros Avançados**: Filtrar por gravidade, status, tipo, percentual de conclusão
+- ✅ **Histórico Detalhado**: Rastreamento individual de cada atividade/ocorrência
+- ✅ **Relatórios Dinâmicos**: Geração sob demanda via views
+- ✅ **Escalabilidade**: Melhor performance para grandes volumes de dados
+
+### 🔄 Como Funciona
+
+```
+┌─────────────────────┐
+│  Frontend           │
+├─────────────────────┤
+│ 1. Criar Atividade  │──┐
+│ 2. Criar Ocorrência │──┼─➤ API (Endpoints Individuais)
+│ 3. Adicionar Foto   │──┘
+└─────────────────────┘
+           │
+           ▼
+┌─────────────────────────────────────────────────┐
+│  Banco de Dados (PostgreSQL)                    │
+├─────────────────────────────────────────────────┤
+│                                                  │
+│  atividade_diaria    ocorrencia_diaria         │
+│  ┌──────────────┐    ┌──────────────┐          │
+│  │ id           │    │ id           │          │
+│  │ descricao    │    │ descricao    │          │
+│  │ status       │    │ tipo         │          │
+│  │ percentual   │    │ gravidade    │          │
+│  └──────────────┘    │ status       │          │
+│                      └──────────────┘          │
+│                                                  │
+│  diario_metadados                               │
+│  ┌──────────────┐                               │
+│  │ foto         │                               │
+│  │ observacoes  │                               │
+│  │ aprovacao    │                               │
+│  └──────────────┘                               │
+│                                                  │
+│           │                                     │
+│           ▼                                     │
+│  vw_diario_consolidado (VIEW)                   │
+│  ┌────────────────────────────────┐             │
+│  │ Agrega dinamicamente:          │             │
+│  │ - Lista de atividades          │             │
+│  │ - Lista de ocorrências         │             │
+│  │ - Metadados (foto, obs)        │             │
+│  │ - Equipe, Equipamentos         │             │
+│  │ - Materiais                    │             │
+│  │ - Contadores e totalizadores   │             │
+│  └────────────────────────────────┘             │
+└─────────────────────────────────────────────────┘
+           │
+           ▼
+┌─────────────────────┐
+│  Frontend           │
+│  (Visualização)     │
+│                     │
+│  GET /diarios-      │
+│  consolidado        │
+└─────────────────────┘
+```
+
+### 📋 Novos Endpoints
+
+A nova arquitetura disponibiliza **19 novos endpoints**:
+
+**Atividades Diárias (5 endpoints)**
+- `POST /atividades-diarias` - Criar atividade
+- `GET /atividades-diarias` - Listar todas
+- `GET /atividades-diarias/obra/:obra_id/data/:data` - Filtrar por obra e data
+- `PUT /atividades-diarias/:id` - Atualizar atividade
+- `DELETE /atividades-diarias/:id` - Deletar atividade
+
+**Ocorrências Diárias (6 endpoints)**
+- `POST /ocorrencias-diarias` - Criar ocorrência
+- `GET /ocorrencias-diarias` - Listar todas
+- `GET /ocorrencias-diarias/obra/:obra_id/data/:data` - Filtrar por obra e data
+- `GET /ocorrencias-diarias/gravidade/:gravidade` - Filtrar por gravidade
+- `PUT /ocorrencias-diarias/:id` - Atualizar ocorrência
+- `DELETE /ocorrencias-diarias/:id` - Deletar ocorrência
+
+**Diário Consolidado (4 endpoints)**
+- `GET /diarios-consolidado` - Listar todos os diários consolidados
+- `GET /diarios-consolidado/obra/:obra_id` - Diários de uma obra
+- `GET /diarios-consolidado/data/:data` - Diários de uma data específica
+- `POST /diarios-consolidado/metadados` - Criar/atualizar metadados (foto, observações, aprovação)
+
+**Endpoints Legados (Mantidos para compatibilidade)**
+- `GET /diarios/*` - Endpoints antigos ainda funcionam
+
+---
+
+### 📋 Atividades Diárias
+
+> 🆕 **Registro Individual de Atividades**: Cada atividade realizada no dia é um registro separado com status e percentual de conclusão.
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `POST` | `/atividades-diarias` | Criar nova atividade |
+| `GET` | `/atividades-diarias` | Listar todas as atividades |
+| `GET` | `/atividades-diarias/obra/:obra_id/data/:data` | Atividades de uma obra em uma data específica |
+| `PUT` | `/atividades-diarias/:id` | Atualizar atividade |
+| `DELETE` | `/atividades-diarias/:id` | Deletar atividade |
+
+#### Criar Atividade
+```http
+POST /atividades-diarias
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+  "obra_id": 1,
+  "data": "2025-11-14",
+  "periodo": "manha",
+  "descricao": "Concretagem da laje do 3º andar",
+  "responsavel_id": 4,
+  "status": "em_andamento",
+  "percentual_conclusao": 45,
+  "observacao": "Previsão de conclusão até amanhã"
+}
+```
+
+**Campos:**
+- `obra_id` (obrigatório): ID da obra
+- `data` (obrigatório): Data da atividade (YYYY-MM-DD)
+- `periodo` (opcional, default: "integral"): Período do dia
+  - Valores: `manha`, `tarde`, `noite`, `integral`
+- `descricao` (obrigatório): Descrição da atividade
+- `responsavel_id` (opcional): ID da pessoa responsável
+- `status` (opcional, default: "em_andamento"): Status da atividade
+  - Valores: `planejada`, `em_andamento`, `concluida`, `cancelada`
+- `percentual_conclusao` (opcional, default: 0): Percentual de conclusão (0-100)
+- `observacao` (opcional): Observações adicionais
+
+**Resposta (201 Created):**
+```json
+{
+  "message": "Atividade criada com sucesso",
+  "data": {
+    "id": 15,
+    "obra_id": 1,
+    "data": "2025-11-14",
+    "periodo": "manha",
+    "descricao": "Concretagem da laje do 3º andar",
+    "responsavel_id": 4,
+    "status": "em_andamento",
+    "percentual_conclusao": 45,
+    "observacao": "Previsão de conclusão até amanhã",
+    "created_at": "2025-11-14T10:30:00Z",
+    "updated_at": null
+  }
+}
+```
+
+#### Listar Todas as Atividades
+```http
+GET /atividades-diarias
+Authorization: Bearer <token>
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": 15,
+      "obra_id": 1,
+      "obra_nome": "Edifício Solar",
+      "data": "2025-11-14",
+      "periodo": "manha",
+      "descricao": "Concretagem da laje do 3º andar",
+      "responsavel_id": 4,
+      "responsavel_nome": "João Silva",
+      "status": "em_andamento",
+      "percentual_conclusao": 45,
+      "observacao": "Previsão de conclusão até amanhã",
+      "created_at": "2025-11-14T10:30:00Z",
+      "updated_at": null
+    },
+    {
+      "id": 16,
+      "obra_id": 1,
+      "obra_nome": "Edifício Solar",
+      "data": "2025-11-14",
+      "periodo": "tarde",
+      "descricao": "Instalação de tubulações",
+      "responsavel_id": 5,
+      "responsavel_nome": "Maria Santos",
+      "status": "planejada",
+      "percentual_conclusao": 0,
+      "observacao": null,
+      "created_at": "2025-11-14T10:35:00Z",
+      "updated_at": null
+    }
+  ]
+}
+```
+
+#### Buscar Atividades por Obra e Data
+```http
+GET /atividades-diarias/obra/:obra_id/data/:data
+Authorization: Bearer <token>
+```
+
+**Parâmetros:**
+- `obra_id` (path): ID da obra
+- `data` (path): Data no formato YYYY-MM-DD
+
+**Exemplo:**
+```http
+GET /atividades-diarias/obra/1/data/2025-11-14
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": 15,
+      "obra_id": 1,
+      "obra_nome": "Edifício Solar",
+      "data": "2025-11-14",
+      "periodo": "manha",
+      "descricao": "Concretagem da laje do 3º andar",
+      "responsavel_id": 4,
+      "responsavel_nome": "João Silva",
+      "status": "em_andamento",
+      "percentual_conclusao": 45,
+      "observacao": "Previsão de conclusão até amanhã",
+      "created_at": "2025-11-14T10:30:00Z",
+      "updated_at": null
+    }
+  ]
+}
+```
+
+#### Atualizar Atividade
+```http
+PUT /atividades-diarias/:id
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Parâmetros:**
+- `id` (path): ID da atividade
+
+**Body:**
+```json
+{
+  "status": "concluida",
+  "percentual_conclusao": 100,
+  "observacao": "Concretagem finalizada com sucesso"
+}
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "message": "Atividade atualizada com sucesso",
+  "data": {
+    "id": 15,
+    "obra_id": 1,
+    "data": "2025-11-14",
+    "periodo": "manha",
+    "descricao": "Concretagem da laje do 3º andar",
+    "responsavel_id": 4,
+    "status": "concluida",
+    "percentual_conclusao": 100,
+    "observacao": "Concretagem finalizada com sucesso",
+    "created_at": "2025-11-14T10:30:00Z",
+    "updated_at": "2025-11-14T16:45:00Z"
+  }
+}
+```
+
+#### Deletar Atividade
+```http
+DELETE /atividades-diarias/:id
+Authorization: Bearer <token>
+```
+
+**Parâmetros:**
+- `id` (path): ID da atividade
+
+**Resposta (204 No Content):**
+```
+(sem corpo de resposta)
+```
+
+**Resposta de Erro (404 Not Found):**
+```json
+{
+  "error": "Atividade não encontrada"
+}
+```
+
+---
+
+### ⚠️ Ocorrências Diárias
+
+> 🆕 **Gestão de Problemas e Eventos**: Registro individual de cada ocorrência/problema com tipo, gravidade e status de resolução.
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `POST` | `/ocorrencias-diarias` | Criar nova ocorrência |
+| `GET` | `/ocorrencias-diarias` | Listar todas as ocorrências |
+| `GET` | `/ocorrencias-diarias/obra/:obra_id/data/:data` | Ocorrências de uma obra em uma data |
+| `GET` | `/ocorrencias-diarias/gravidade/:gravidade` | Filtrar por gravidade |
+| `PUT` | `/ocorrencias-diarias/:id` | Atualizar ocorrência |
+| `DELETE` | `/ocorrencias-diarias/:id` | Deletar ocorrência |
+
+#### Criar Ocorrência
+```http
+POST /ocorrencias-diarias
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+  "obra_id": 1,
+  "data": "2025-11-14",
+  "periodo": "tarde",
+  "tipo": "seguranca",
+  "gravidade": "alta",
+  "descricao": "Queda de material de andaime",
+  "responsavel_id": 4,
+  "status_resolucao": "em_tratamento",
+  "acao_tomada": "Área isolada e equipe de segurança acionada"
+}
+```
+
+**Campos:**
+- `obra_id` (obrigatório): ID da obra
+- `data` (obrigatório): Data da ocorrência (YYYY-MM-DD)
+- `periodo` (opcional, default: "integral"): Período do dia
+  - Valores: `manha`, `tarde`, `noite`, `integral`
+- `tipo` (opcional, default: "geral"): Tipo da ocorrência
+  - Valores: `seguranca`, `qualidade`, `prazo`, `custo`, `ambiental`, `trabalhista`, `equipamento`, `geral`
+- `gravidade` (opcional, default: "baixa"): Nível de gravidade
+  - Valores: `baixa`, `media`, `alta`, `critica`
+- `descricao` (obrigatório): Descrição da ocorrência
+- `responsavel_id` (opcional): ID da pessoa responsável
+- `status_resolucao` (opcional, default: "pendente"): Status de resolução
+  - Valores: `pendente`, `em_tratamento`, `resolvida`, `nao_aplicavel`
+- `acao_tomada` (opcional): Ação tomada para resolver
+
+**Resposta (201 Created):**
+```json
+{
+  "message": "Ocorrência criada com sucesso",
+  "data": {
+    "id": 8,
+    "obra_id": 1,
+    "data": "2025-11-14",
+    "periodo": "tarde",
+    "tipo": "seguranca",
+    "gravidade": "alta",
+    "descricao": "Queda de material de andaime",
+    "responsavel_id": 4,
+    "status_resolucao": "em_tratamento",
+    "acao_tomada": "Área isolada e equipe de segurança acionada",
+    "created_at": "2025-11-14T14:20:00Z",
+    "updated_at": null
+  }
+}
+```
+
+#### Listar Todas as Ocorrências
+```http
+GET /ocorrencias-diarias
+Authorization: Bearer <token>
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": 8,
+      "obra_id": 1,
+      "obra_nome": "Edifício Solar",
+      "data": "2025-11-14",
+      "periodo": "tarde",
+      "tipo": "seguranca",
+      "gravidade": "alta",
+      "descricao": "Queda de material de andaime",
+      "responsavel_id": 4,
+      "responsavel_nome": "João Silva",
+      "status_resolucao": "em_tratamento",
+      "acao_tomada": "Área isolada e equipe de segurança acionada",
+      "created_at": "2025-11-14T14:20:00Z",
+      "updated_at": null
+    },
+    {
+      "id": 9,
+      "obra_id": 1,
+      "obra_nome": "Edifício Solar",
+      "data": "2025-11-13",
+      "periodo": "manha",
+      "tipo": "clima",
+      "gravidade": "media",
+      "descricao": "Chuva forte interrompeu trabalhos externos",
+      "responsavel_id": 4,
+      "responsavel_nome": "João Silva",
+      "status_resolucao": "nao_aplicavel",
+      "acao_tomada": "Equipe redirecionada para atividades internas",
+      "created_at": "2025-11-13T09:30:00Z",
+      "updated_at": "2025-11-13T10:00:00Z"
+    }
+  ]
+}
+```
+
+#### Buscar Ocorrências por Obra e Data
+```http
+GET /ocorrencias-diarias/obra/:obra_id/data/:data
+Authorization: Bearer <token>
+```
+
+**Parâmetros:**
+- `obra_id` (path): ID da obra
+- `data` (path): Data no formato YYYY-MM-DD
+
+**Exemplo:**
+```http
+GET /ocorrencias-diarias/obra/1/data/2025-11-14
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": 8,
+      "obra_id": 1,
+      "obra_nome": "Edifício Solar",
+      "data": "2025-11-14",
+      "periodo": "tarde",
+      "tipo": "seguranca",
+      "gravidade": "alta",
+      "descricao": "Queda de material de andaime",
+      "responsavel_id": 4,
+      "responsavel_nome": "João Silva",
+      "status_resolucao": "em_tratamento",
+      "acao_tomada": "Área isolada e equipe de segurança acionada",
+      "created_at": "2025-11-14T14:20:00Z",
+      "updated_at": null
+    }
+  ]
+}
+```
+
+#### Filtrar Ocorrências por Gravidade
+```http
+GET /ocorrencias-diarias/gravidade/:gravidade
+Authorization: Bearer <token>
+```
+
+**Parâmetros:**
+- `gravidade` (path): Nível de gravidade
+  - Valores: `baixa`, `media`, `alta`, `critica`
+
+**Exemplo:**
+```http
+GET /ocorrencias-diarias/gravidade/alta
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": 8,
+      "obra_id": 1,
+      "obra_nome": "Edifício Solar",
+      "data": "2025-11-14",
+      "periodo": "tarde",
+      "tipo": "seguranca",
+      "gravidade": "alta",
+      "descricao": "Queda de material de andaime",
+      "responsavel_id": 4,
+      "responsavel_nome": "João Silva",
+      "status_resolucao": "em_tratamento",
+      "acao_tomada": "Área isolada e equipe de segurança acionada",
+      "created_at": "2025-11-14T14:20:00Z",
+      "updated_at": null
+    }
+  ]
+}
+```
+
+#### Atualizar Ocorrência
+```http
+PUT /ocorrencias-diarias/:id
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Parâmetros:**
+- `id` (path): ID da ocorrência
+
+**Body:**
+```json
+{
+  "status_resolucao": "resolvida",
+  "acao_tomada": "Área isolada, equipe de segurança acionada. Revisão de procedimentos realizada e equipe treinada."
+}
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "message": "Ocorrência atualizada com sucesso",
+  "data": {
+    "id": 8,
+    "obra_id": 1,
+    "data": "2025-11-14",
+    "periodo": "tarde",
+    "tipo": "seguranca",
+    "gravidade": "alta",
+    "descricao": "Queda de material de andaime",
+    "responsavel_id": 4,
+    "status_resolucao": "resolvida",
+    "acao_tomada": "Área isolada, equipe de segurança acionada. Revisão de procedimentos realizada e equipe treinada.",
+    "created_at": "2025-11-14T14:20:00Z",
+    "updated_at": "2025-11-14T17:30:00Z"
+  }
+}
+```
+
+#### Deletar Ocorrência
+```http
+DELETE /ocorrencias-diarias/:id
+Authorization: Bearer <token>
+```
+
+**Parâmetros:**
+- `id` (path): ID da ocorrência
+
+**Resposta (204 No Content):**
+```
+(sem corpo de resposta)
+```
+
+**Resposta de Erro (404 Not Found):**
+```json
+{
+  "error": "Ocorrência não encontrada"
+}
+```
+
+---
+
+### 📊 Diário Consolidado
+
+> 🆕 **View Dinâmica**: O diário consolidado é gerado automaticamente agregando atividades, ocorrências, metadados, equipe, equipamentos e materiais.
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `GET` | `/diarios-consolidado` | Listar todos os diários consolidados |
+| `GET` | `/diarios-consolidado/obra/:obra_id` | Diários consolidados de uma obra |
+| `GET` | `/diarios-consolidado/data/:data` | Diários consolidados de uma data |
+| `POST` | `/diarios-consolidado/metadados` | Criar/atualizar metadados do diário |
+
+#### Listar Todos os Diários Consolidados
+```http
+GET /diarios-consolidado
+Authorization: Bearer <token>
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "data": [
+    {
+      "obra_id": 1,
+      "obra_nome": "Edifício Solar",
+      "data": "2025-11-14",
+      "periodo": "manha",
+      "atividades": "Concretagem da laje do 3º andar (em_andamento - 45%); Preparação de materiais (concluida - 100%)",
+      "qtd_atividades": 2,
+      "ocorrencias": "[ALTA] Queda de material de andaime - em_tratamento; [MEDIA] Atraso na entrega de materiais - resolvida",
+      "qtd_ocorrencias": 2,
+      "foto": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD...",
+      "observacoes": "Dia produtivo, apesar dos contratempos",
+      "responsavel_id": 4,
+      "responsavel_nome": "João Silva",
+      "aprovado_por_id": 2,
+      "aprovado_por_nome": "Carlos Admin",
+      "status_aprovacao": "aprovado",
+      "equipe": "Pedreiro (2 pessoas, 8h); Servente (3 pessoas, 8h)",
+      "qtd_equipe": 2,
+      "equipamentos": "Betoneira 400L (1 unidade, 6h); Andaime metálico (4 unidades, 8h)",
+      "qtd_equipamentos": 2,
+      "materiais": "Cimento CP-II (50 sacos); Areia média (3 m³); Brita 1 (2 m³)",
+      "qtd_materiais": 3,
+      "created_at": "2025-11-14T10:30:00Z",
+      "updated_at": "2025-11-14T17:45:00Z"
+    }
+  ]
+}
+```
+
+**Estrutura do Diário Consolidado:**
+- **atividades**: String agregada com todas as atividades do dia (descrição + status + percentual)
+- **qtd_atividades**: Contador de atividades
+- **ocorrencias**: String agregada com todas as ocorrências (gravidade + descrição + status)
+- **qtd_ocorrencias**: Contador de ocorrências
+- **foto**: Foto do diário em base64 (dos metadados)
+- **observacoes**: Observações gerais do dia (dos metadados)
+- **responsavel_***: Pessoa responsável pelo diário (dos metadados)
+- **aprovado_por_***: Pessoa que aprovou (dos metadados)
+- **status_aprovacao**: Status de aprovação (dos metadados)
+- **equipe**: String agregada com a equipe do dia
+- **qtd_equipe**: Contador de membros da equipe
+- **equipamentos**: String agregada com equipamentos utilizados
+- **qtd_equipamentos**: Contador de equipamentos
+- **materiais**: String agregada com materiais consumidos
+- **qtd_materiais**: Contador de materiais
+
+#### Buscar Diários Consolidados por Obra
+```http
+GET /diarios-consolidado/obra/:obra_id
+Authorization: Bearer <token>
+```
+
+**Parâmetros:**
+- `obra_id` (path): ID da obra
+
+**Exemplo:**
+```http
+GET /diarios-consolidado/obra/1
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "data": [
+    {
+      "obra_id": 1,
+      "obra_nome": "Edifício Solar",
+      "data": "2025-11-14",
+      "periodo": "manha",
+      "atividades": "Concretagem da laje do 3º andar (em_andamento - 45%)",
+      "qtd_atividades": 1,
+      "ocorrencias": null,
+      "qtd_ocorrencias": 0,
+      "foto": null,
+      "observacoes": null,
+      "responsavel_id": null,
+      "responsavel_nome": null,
+      "aprovado_por_id": null,
+      "aprovado_por_nome": null,
+      "status_aprovacao": null,
+      "equipe": null,
+      "qtd_equipe": 0,
+      "equipamentos": null,
+      "qtd_equipamentos": 0,
+      "materiais": null,
+      "qtd_materiais": 0,
+      "created_at": "2025-11-14T10:30:00Z",
+      "updated_at": null
+    }
+  ]
+}
+```
+
+#### Buscar Diários Consolidados por Data
+```http
+GET /diarios-consolidado/data/:data
+Authorization: Bearer <token>
+```
+
+**Parâmetros:**
+- `data` (path): Data no formato YYYY-MM-DD
+
+**Exemplo:**
+```http
+GET /diarios-consolidado/data/2025-11-14
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "data": [
+    {
+      "obra_id": 1,
+      "obra_nome": "Edifício Solar",
+      "data": "2025-11-14",
+      "periodo": "manha",
+      "atividades": "Concretagem da laje do 3º andar (em_andamento - 45%)",
+      "qtd_atividades": 1,
+      "ocorrencias": null,
+      "qtd_ocorrencias": 0,
+      "foto": null,
+      "observacoes": null,
+      "responsavel_id": 4,
+      "responsavel_nome": "João Silva",
+      "aprovado_por_id": null,
+      "aprovado_por_nome": null,
+      "status_aprovacao": "pendente",
+      "equipe": null,
+      "qtd_equipe": 0,
+      "equipamentos": null,
+      "qtd_equipamentos": 0,
+      "materiais": null,
+      "qtd_materiais": 0,
+      "created_at": "2025-11-14T10:30:00Z",
+      "updated_at": null
+    },
+    {
+      "obra_id": 2,
+      "obra_nome": "Residencial Jardim",
+      "data": "2025-11-14",
+      "periodo": "integral",
+      "atividades": "Instalação elétrica (concluida - 100%)",
+      "qtd_atividades": 1,
+      "ocorrencias": null,
+      "qtd_ocorrencias": 0,
+      "foto": null,
+      "observacoes": "Instalação concluída conforme projeto",
+      "responsavel_id": 5,
+      "responsavel_nome": "Maria Santos",
+      "aprovado_por_id": 2,
+      "aprovado_por_nome": "Carlos Admin",
+      "status_aprovacao": "aprovado",
+      "equipe": "Eletricista (2 pessoas, 8h)",
+      "qtd_equipe": 1,
+      "equipamentos": null,
+      "qtd_equipamentos": 0,
+      "materiais": "Cabo 2.5mm (200m); Disjuntor 32A (10 unidades)",
+      "qtd_materiais": 2,
+      "created_at": "2025-11-14T08:00:00Z",
+      "updated_at": "2025-11-14T18:00:00Z"
+    }
+  ]
+}
+```
+
+#### Criar/Atualizar Metadados do Diário
+```http
+POST /diarios-consolidado/metadados
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+  "obra_id": 1,
+  "data": "2025-11-14",
+  "periodo": "manha",
+  "foto": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD...",
+  "observacoes": "Dia produtivo, apesar dos contratempos com o clima",
+  "responsavel_id": 4,
+  "aprovado_por_id": 2,
+  "status_aprovacao": "aprovado"
+}
+```
+
+**Campos:**
+- `obra_id` (obrigatório): ID da obra
+- `data` (obrigatório): Data do diário (YYYY-MM-DD)
+- `periodo` (opcional, default: "integral"): Período do dia
+  - Valores: `manha`, `tarde`, `noite`, `integral`
+- `foto` (opcional): Foto do diário em base64
+- `observacoes` (opcional): Observações gerais do dia
+- `responsavel_id` (opcional): ID da pessoa responsável
+- `aprovado_por_id` (opcional): ID da pessoa que aprovou
+- `status_aprovacao` (opcional): Status de aprovação
+  - Valores: `pendente`, `aprovado`, `rejeitado`
+
+**Resposta (201 Created):**
+```json
+{
+  "message": "Metadados criados/atualizados com sucesso",
+  "data": {
+    "id": 5,
+    "obra_id": 1,
+    "data": "2025-11-14",
+    "periodo": "manha",
+    "foto": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD...",
+    "observacoes": "Dia produtivo, apesar dos contratempos com o clima",
+    "responsavel_id": 4,
+    "aprovado_por_id": 2,
+    "status_aprovacao": "aprovado",
+    "created_at": "2025-11-14T10:30:00Z",
+    "updated_at": "2025-11-14T17:45:00Z"
+  }
+}
+```
+
+**Nota sobre UPSERT:**
+Este endpoint usa `ON CONFLICT (obra_id, data, periodo) DO UPDATE`, portanto:
+- Se já existir metadado para a mesma (obra_id, data, periodo), ele será **atualizado**
+- Se não existir, será **criado** um novo registro
+- Isso permite atualizar foto/observações/aprovação sem duplicar registros
+
+---
+
+### �📖 Diários de Obra (Legado)
 
 #### Listar todos os diários
 ```http

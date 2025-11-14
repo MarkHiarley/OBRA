@@ -78,6 +78,22 @@ func main() {
 	materialDiarioUseCase := usecases.NewMaterialDiarioUseCase(materialDiarioService)
 	materialDiarioController := controller.NewMaterialDiarioController(materialDiarioUseCase)
 
+	// Atividade Diária (Nova Arquitetura)
+	atividadeDiariaService := services.NewAtividadeDiariaService(dbconnection)
+	atividadeDiariaUseCase := usecases.NewAtividadeDiariaUseCase(atividadeDiariaService, obraService)
+	atividadeDiariaController := controller.NewAtividadeDiariaController(atividadeDiariaUseCase)
+
+	// Ocorrência Diária (Nova Arquitetura)
+	ocorrenciaDiariaService := services.NewOcorrenciaDiariaService(dbconnection)
+	ocorrenciaDiariaUseCase := usecases.NewOcorrenciaDiariaUseCase(ocorrenciaDiariaService, obraService)
+	ocorrenciaDiariaController := controller.NewOcorrenciaDiariaController(ocorrenciaDiariaUseCase)
+
+	// Diário Consolidado (Nova Arquitetura)
+	diarioConsolidadoService := services.NewDiarioConsolidadoService(dbconnection)
+	diarioMetadadosService := services.NewDiarioMetadadosService(dbconnection)
+	diarioConsolidadoUseCase := usecases.NewDiarioConsolidadoUseCase(diarioConsolidadoService, diarioMetadadosService, obraService)
+	diarioConsolidadoController := controller.NewDiarioConsolidadoController(diarioConsolidadoUseCase)
+
 	server := gin.Default()
 
 	// ✅ Configurar CORS para permitir todas as origens
@@ -156,6 +172,31 @@ func main() {
 		protected.GET("/material-diario/diario/:diario_id", materialDiarioController.GetByDiarioId)
 		protected.PUT("/material-diario/:id", materialDiarioController.Update)
 		protected.DELETE("/material-diario/:id", materialDiarioController.Delete)
+
+		// ========== NOVA ARQUITETURA: DIÁRIO NORMALIZADO ==========
+
+		// TAREFAS REALIZADAS
+		protected.POST("/tarefas", atividadeDiariaController.CreateAtividade)
+		protected.GET("/tarefas", atividadeDiariaController.GetAtividades)
+		protected.GET("/tarefas/obra/:obra_id/data/:data", atividadeDiariaController.GetAtividadesByObraData)
+		protected.PUT("/tarefas/:id", atividadeDiariaController.UpdateAtividade)
+		protected.DELETE("/tarefas/:id", atividadeDiariaController.DeleteAtividade)
+
+		// OCORRÊNCIAS
+		protected.POST("/ocorrencias", ocorrenciaDiariaController.CreateOcorrencia)
+		protected.GET("/ocorrencias", ocorrenciaDiariaController.GetOcorrencias)
+		protected.GET("/ocorrencias/obra/:obra_id/data/:data", ocorrenciaDiariaController.GetOcorrenciasByObraData)
+		protected.GET("/ocorrencias/gravidade/:gravidade", ocorrenciaDiariaController.GetOcorrenciasByGravidade)
+		protected.PUT("/ocorrencias/:id", ocorrenciaDiariaController.UpdateOcorrencia)
+		protected.DELETE("/ocorrencias/:id", ocorrenciaDiariaController.DeleteOcorrencia)
+
+		// DIÁRIO CONSOLIDADO (View Agregada)
+		protected.GET("/diarios-consolidado", diarioConsolidadoController.GetDiarioConsolidado)
+		protected.GET("/diarios-consolidado/obra/:obra_id", diarioConsolidadoController.GetDiarioConsolidadoByObra)
+		protected.GET("/diarios-consolidado/data/:data", diarioConsolidadoController.GetDiarioConsolidadoByData)
+		protected.POST("/diarios-consolidado/metadados", diarioConsolidadoController.CreateOrUpdateMetadados)
+
+		// ==========================================================
 
 		// UPDATE (PUT)
 		protected.PUT("/usuarios/:id", usuarioController.PutUsuarioById)

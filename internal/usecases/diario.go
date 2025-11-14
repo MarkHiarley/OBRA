@@ -134,21 +134,12 @@ func (pu *DiarioUseCase) GetRelatorioDiarioCompleto(diarioId int64) (models.Rela
 }
 
 // GetDiarioRelatorioFormatado retorna relatório de diário de obra formatado para impressão
+// AGORA USA A NOVA ARQUITETURA NORMALIZADA (atividade_diaria, ocorrencia_diaria, diario_metadados)
 func (pu *DiarioUseCase) GetDiarioRelatorioFormatado(obraId int64) (models.DiarioRelatorioCompleto, error) {
 	// Buscar dados da obra
 	obra, err := pu.obraService.GetObraById(obraId)
 	if err != nil {
 		return models.DiarioRelatorioCompleto{}, fmt.Errorf("erro ao buscar dados da obra: %w", err)
-	}
-
-	// Buscar diários da obra
-	diarios, err := pu.services.GetDiarioByObraId(obraId)
-	if err != nil {
-		return models.DiarioRelatorioCompleto{}, fmt.Errorf("erro ao buscar diários: %w", err)
-	}
-
-	if len(diarios) == 0 {
-		return models.DiarioRelatorioCompleto{}, fmt.Errorf("nenhum diário encontrado para a obra")
 	}
 
 	// Buscar dados do contratante (se disponível)
@@ -178,12 +169,28 @@ func (pu *DiarioUseCase) GetDiarioRelatorioFormatado(obraId int64) (models.Diari
 	// Calcular tempo decorrido
 	tempoDecorrido := pu.calcularTempoDecorrido(obra.DataInicio.String)
 
+	// NOVA ARQUITETURA: Buscar do diário consolidado ao invés de diario_obra legado
+	diariosConsolidados, err := pu.services.GetDiariosConsolidadosByObra(obraId)
+	if err != nil {
+		return models.DiarioRelatorioCompleto{}, fmt.Errorf("erro ao buscar diários consolidados: %w", err)
+	}
+
+	if len(diariosConsolidados) == 0 {
+		return models.DiarioRelatorioCompleto{}, fmt.Errorf("nenhum diário encontrado para a obra")
+	}
+
 	// Buscar equipe, equipamentos e materiais do banco de dados
 	equipeData, _ := pu.services.GetEquipeByObraId(obraId)
 	equipamentosData, _ := pu.services.GetEquipamentosByObraId(obraId)
 	materiaisData, _ := pu.services.GetMateriaisByObraId(obraId)
 
-	// Montar relatório formatado baseado nos dados reais do banco
+	// Definir contratada
+	contratada := "N/A"
+	if obra.Contratada.Valid && obra.Contratada.String != "" {
+		contratada = obra.Contratada.String
+	}
+
+	// Montar relatório formatado baseado nos dados da NOVA ARQUITETURA
 	relatorio := models.DiarioRelatorioCompleto{
 		InformacoesObra: models.InformacoesObra{
 			Titulo:               obra.Nome.String,
@@ -191,13 +198,13 @@ func (pu *DiarioUseCase) GetDiarioRelatorioFormatado(obraId int64) (models.Diari
 			Contratante:          contratanteNome,
 			PrazoObra:            fmt.Sprintf("%d DIAS", obra.PrazoDias.Int64),
 			TempoDecorrido:       fmt.Sprintf("%d DIAS", tempoDecorrido),
-			Contratada:           "N/A", // Pode ser adicionado posteriormente se houver campo para contratada
+			Contratada:           contratada,
 			ResponsavelTecnico:   responsavelTecnico,
 			RegistroProfissional: registroProfissional,
 		},
-		TarefasRealizadas:      pu.formatarTarefasDoDiario(diarios),
-		Ocorrencias:            pu.formatarOcorrenciasDoDiario(diarios),
-		Fotos:                  pu.extrairFotosDoDiario(diarios),
+		TarefasRealizadas:      pu.formatarTarefasDoDiarioConsolidado(diariosConsolidados),
+		Ocorrencias:            pu.formatarOcorrenciasDoDiarioConsolidado(diariosConsolidados),
+		Fotos:                  pu.extrairFotosDoDiarioConsolidado(diariosConsolidados),
 		EquipeEnvolvida:        pu.converterEquipe(equipeData),
 		EquipamentosUtilizados: pu.converterEquipamentos(equipamentosData),
 		MateriaisUtilizados:    pu.converterMateriais(materiaisData),
@@ -205,7 +212,7 @@ func (pu *DiarioUseCase) GetDiarioRelatorioFormatado(obraId int64) (models.Diari
 			Nome:      responsavelTecnico,
 			Cargo:     "Responsável Técnico",
 			Documento: "",
-			Empresa:   "N/A",
+			Empresa:   contratada,
 		},
 		ResponsavelPrefeitura: models.ResponsavelInfo{
 			Nome:      contratanteNome,
@@ -218,18 +225,22 @@ func (pu *DiarioUseCase) GetDiarioRelatorioFormatado(obraId int64) (models.Diari
 	return relatorio, nil
 }
 
-// Métodos auxiliares para formatação
-func (pu *DiarioUseCase) formatarTarefasDoDiario(diarios []models.DiarioObra) []models.TarefaRealizada {
+// Métodos auxiliares para formatação usando NOVA ARQUITETURA
+
+// formatarTarefasDoDiarioConsolidado extrai atividades da view consolidada
+func (pu *DiarioUseCase) formatarTarefasDoDiarioConsolidado(diarios []models.DiarioConsolidado) []models.TarefaRealizada {
 	var tarefas []models.TarefaRealizada
 
 	for _, diario := range diarios {
-		if diario.AtividadesRealizadas.Valid && diario.Data.Valid {
-			// Separar múltiplas atividades por linha
-			atividades := strings.Split(diario.AtividadesRealizadas.String, "\n")
+		// A view já agrega as atividades como string
+		if diario.AtividadesRealizadas.Valid && diario.AtividadesRealizadas.String != "" {
+			// Separar múltiplas atividades (formato: "desc1 (status - 50%); desc2 (status - 100%)")
+			atividades := strings.Split(diario.AtividadesRealizadas.String, ";")
 			for _, atividade := range atividades {
-				if strings.TrimSpace(atividade) != "" {
+				atividadeTrimmed := strings.TrimSpace(atividade)
+				if atividadeTrimmed != "" {
 					tarefa := models.TarefaRealizada{
-						Descricao: strings.TrimSpace(atividade),
+						Descricao: atividadeTrimmed,
 						Data:      diario.Data.String,
 					}
 					tarefas = append(tarefas, tarefa)
@@ -241,16 +252,47 @@ func (pu *DiarioUseCase) formatarTarefasDoDiario(diarios []models.DiarioObra) []
 	return tarefas
 }
 
-func (pu *DiarioUseCase) formatarOcorrenciasDoDiario(diarios []models.DiarioObra) []models.Ocorrencia {
+// formatarOcorrenciasDoDiarioConsolidado extrai ocorrências da view consolidada
+func (pu *DiarioUseCase) formatarOcorrenciasDoDiarioConsolidado(diarios []models.DiarioConsolidado) []models.Ocorrencia {
 	var ocorrencias []models.Ocorrencia
 
 	for _, diario := range diarios {
-		if diario.Ocorrencias.Valid && diario.Ocorrencias.String != "" && strings.ToLower(diario.Ocorrencias.String) != "não houve ocorrências" {
-			ocorrencia := models.Ocorrencia{
-				Descricao: diario.Ocorrencias.String,
-				Tipo:      "OBSERVACAO",
+		// A view já agrega as ocorrências como string (formato: "[ALTA] desc - status; [MEDIA] desc2 - status2")
+		if diario.Ocorrencias.Valid && diario.Ocorrencias.String != "" {
+			// Separar múltiplas ocorrências
+			ocorrenciasList := strings.Split(diario.Ocorrencias.String, ";")
+			for _, ocorrencia := range ocorrenciasList {
+				ocorrenciaTrimmed := strings.TrimSpace(ocorrencia)
+				if ocorrenciaTrimmed != "" {
+					// Extrair tipo/gravidade se estiver no formato [GRAVIDADE] descrição
+					tipo := "OBSERVACAO"
+					descricao := ocorrenciaTrimmed
+
+					if strings.HasPrefix(ocorrenciaTrimmed, "[") {
+						endBracket := strings.Index(ocorrenciaTrimmed, "]")
+						if endBracket > 0 {
+							gravidade := ocorrenciaTrimmed[1:endBracket]
+							descricao = strings.TrimSpace(ocorrenciaTrimmed[endBracket+1:])
+
+							// Mapear gravidade para tipo
+							switch strings.ToUpper(gravidade) {
+							case "ALTA", "CRITICA":
+								tipo = "CRITICO"
+							case "MEDIA":
+								tipo = "IMPORTANTE"
+							case "BAIXA":
+								tipo = "OBSERVACAO"
+							}
+						}
+					}
+
+					ocorrenciaObj := models.Ocorrencia{
+						Descricao: descricao,
+						Tipo:      tipo,
+					}
+					ocorrencias = append(ocorrencias, ocorrenciaObj)
+				}
 			}
-			ocorrencias = append(ocorrencias, ocorrencia)
 		}
 	}
 
@@ -264,6 +306,27 @@ func (pu *DiarioUseCase) formatarOcorrenciasDoDiario(diarios []models.DiarioObra
 
 	return ocorrencias
 }
+
+// extrairFotosDoDiarioConsolidado extrai fotos dos metadados
+func (pu *DiarioUseCase) extrairFotosDoDiarioConsolidado(diarios []models.DiarioConsolidado) []models.FotoInfo {
+	var fotos []models.FotoInfo
+
+	for _, diario := range diarios {
+		if diario.Foto.Valid && diario.Foto.String != "" {
+			foto := models.FotoInfo{
+				ID:        diario.ObraID.Int64, // Usar obra_id como ID da foto
+				URL:       diario.Foto.String,
+				Timestamp: diario.Data.String,
+				Categoria: "DIARIO",
+			}
+			fotos = append(fotos, foto)
+		}
+	}
+
+	return fotos
+}
+
+// Métodos auxiliares para conversores (ainda usados para equipe, equipamentos, materiais)
 
 func (pu *DiarioUseCase) converterEquipe(data []map[string]interface{}) []models.EquipeMembro {
 	var equipe []models.EquipeMembro
@@ -308,85 +371,9 @@ func (pu *DiarioUseCase) converterMateriais(data []map[string]interface{}) []mod
 	return materiais
 }
 
-func (pu *DiarioUseCase) obterEquipePadrao() []models.EquipeMembro {
-	return []models.EquipeMembro{
-		{Codigo: "MESTRE", Descricao: "MESTRE DE OBRA", QuantidadeUtilizada: 1},
-		{Codigo: "PEDREIRO", Descricao: "PEDREIRO", QuantidadeUtilizada: 5},
-		{Codigo: "SERVENTE", Descricao: "SERVENTE", QuantidadeUtilizada: 8},
-		{Codigo: "ELETRICISTA", Descricao: "ELETRICISTA", QuantidadeUtilizada: 1},
-	}
-}
-
-func (pu *DiarioUseCase) obterEquipamentosPadrao() []models.EquipamentoUtilizado {
-	return []models.EquipamentoUtilizado{
-		{Codigo: "PA", Descricao: "PÁ", QuantidadeUtilizada: 4},
-		{Codigo: "INCHADA", Descricao: "INCHADA", QuantidadeUtilizada: 2},
-		{Codigo: "MARRETA", Descricao: "MARRETA", QuantidadeUtilizada: 3},
-		{Codigo: "RETRO", Descricao: "RETRO ESCAVADEIRA", QuantidadeUtilizada: 1},
-		{Codigo: "MAKITA", Descricao: "MAKITA", QuantidadeUtilizada: 3},
-		{Codigo: "CACAMBA", Descricao: "CAÇAMBA", QuantidadeUtilizada: 1},
-		{Codigo: "BETONEIRA", Descricao: "BETONEIRA", QuantidadeUtilizada: 1},
-		{Codigo: "ENCERADEIRA", Descricao: "ENCERADEIRA DE PISO", QuantidadeUtilizada: 1},
-		{Codigo: "CARRINHO", Descricao: "CARRINHO DE MÃO", QuantidadeUtilizada: 5},
-	}
-}
-
 // Métodos auxiliares para cálculos e formatação
 func (pu *DiarioUseCase) calcularTempoDecorrido(dataInicio string) int64 {
 	// Implementação simples - pode ser melhorada com cálculos reais de data
 	// Para agora, retorna um valor padrão baseado na quantidade de diários
 	return 30 // Valor padrão, pode ser calculado baseado em diários ou data atual vs data de início
-}
-
-func (pu *DiarioUseCase) formatarEndereco(obra models.Obra) string {
-	var endereco strings.Builder
-
-	if obra.EnderecoRua.Valid && obra.EnderecoRua.String != "" {
-		endereco.WriteString(obra.EnderecoRua.String)
-		if obra.EnderecoNumero.Valid && obra.EnderecoNumero.String != "" {
-			endereco.WriteString(", " + obra.EnderecoNumero.String)
-		}
-	}
-
-	if obra.EnderecoBairro.Valid && obra.EnderecoBairro.String != "" {
-		if endereco.Len() > 0 {
-			endereco.WriteString(" - ")
-		}
-		endereco.WriteString(obra.EnderecoBairro.String)
-	}
-
-	if obra.EnderecoCidade.Valid && obra.EnderecoCidade.String != "" {
-		if endereco.Len() > 0 {
-			endereco.WriteString(", ")
-		}
-		endereco.WriteString(obra.EnderecoCidade.String)
-	}
-
-	if obra.EnderecoEstado.Valid && obra.EnderecoEstado.String != "" {
-		if endereco.Len() > 0 {
-			endereco.WriteString("/")
-		}
-		endereco.WriteString(obra.EnderecoEstado.String)
-	}
-
-	return endereco.String()
-}
-
-// extrairFotosDoDiario extrai todas as fotos dos diários
-func (pu *DiarioUseCase) extrairFotosDoDiario(diarios []models.DiarioObra) []models.FotoInfo {
-	var fotos []models.FotoInfo
-
-	for _, diario := range diarios {
-		if diario.Foto.Valid && diario.Foto.String != "" {
-			foto := models.FotoInfo{
-				ID:        diario.ID.Int64,
-				URL:       diario.Foto.String,
-				Timestamp: diario.Data.String,
-				Categoria: "DIARIO",
-			}
-			fotos = append(fotos, foto)
-		}
-	}
-
-	return fotos
 }

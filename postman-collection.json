@@ -1,0 +1,399 @@
+{
+  "name": "API Diário de Obras",
+  "description": "Coleção completa de endpoints da API de Diário de Obras (Nova Arquitetura)",
+  "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+  "item": [
+    {
+      "name": "1. Autenticação",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@teste.com\",\n  \"senha\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": ["{{base_url}}"],
+              "path": ["login"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Tarefas",
+      "item": [
+        {
+          "name": "Criar Tarefa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"obra_id\": 5,\n  \"data\": \"2024-11-14\",\n  \"periodo\": \"manha\",\n  \"descricao\": \"Concretagem das vigas do 2º pavimento\",\n  \"status\": \"em_andamento\",\n  \"percentual_conclusao\": 60,\n  \"observacao\": \"Clima favorável\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tarefas",
+              "host": ["{{base_url}}"],
+              "path": ["tarefas"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar Todas as Tarefas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tarefas",
+              "host": ["{{base_url}}"],
+              "path": ["tarefas"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar Tarefas por Obra e Data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tarefas/obra/5/data/2024-11-14",
+              "host": ["{{base_url}}"],
+              "path": ["tarefas", "obra", "5", "data", "2024-11-14"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar Tarefa",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"obra_id\": 5,\n  \"data\": \"2024-11-14\",\n  \"periodo\": \"manha\",\n  \"descricao\": \"Concretagem das vigas do 2º pavimento\",\n  \"status\": \"concluida\",\n  \"percentual_conclusao\": 100,\n  \"observacao\": \"Concluída com sucesso\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tarefas/2",
+              "host": ["{{base_url}}"],
+              "path": ["tarefas", "2"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deletar Tarefa",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tarefas/2",
+              "host": ["{{base_url}}"],
+              "path": ["tarefas", "2"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Ocorrências",
+      "item": [
+        {
+          "name": "Criar Ocorrência",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"obra_id\": 5,\n  \"data\": \"2024-11-14\",\n  \"periodo\": \"manha\",\n  \"tipo\": \"seguranca\",\n  \"gravidade\": \"alta\",\n  \"descricao\": \"Falta de EPIs na equipe de alvenaria\",\n  \"status_resolucao\": \"resolvida\",\n  \"acao_tomada\": \"EPIs fornecidos imediatamente\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ocorrencias",
+              "host": ["{{base_url}}"],
+              "path": ["ocorrencias"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar Todas as Ocorrências",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ocorrencias",
+              "host": ["{{base_url}}"],
+              "path": ["ocorrencias"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar Ocorrências por Obra e Data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ocorrencias/obra/5/data/2024-11-14",
+              "host": ["{{base_url}}"],
+              "path": ["ocorrencias", "obra", "5", "data", "2024-11-14"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar por Gravidade",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ocorrencias/gravidade/alta",
+              "host": ["{{base_url}}"],
+              "path": ["ocorrencias", "gravidade", "alta"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar Ocorrência",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"obra_id\": 5,\n  \"data\": \"2024-11-14\",\n  \"periodo\": \"manha\",\n  \"tipo\": \"seguranca\",\n  \"gravidade\": \"alta\",\n  \"descricao\": \"Falta de EPIs na equipe de alvenaria\",\n  \"status_resolucao\": \"resolvida\",\n  \"acao_tomada\": \"EPIs fornecidos e treinamento realizado\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ocorrencias/1",
+              "host": ["{{base_url}}"],
+              "path": ["ocorrencias", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deletar Ocorrência",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ocorrencias/1",
+              "host": ["{{base_url}}"],
+              "path": ["ocorrencias", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Metadados do Diário",
+      "item": [
+        {
+          "name": "Criar/Atualizar Metadados",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"obra_id\": 5,\n  \"data\": \"2024-11-14\",\n  \"periodo\": \"integral\",\n  \"foto\": \"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0a\",\n  \"observacoes\": \"Dia produtivo. Clima favorável. Equipe trabalhou bem.\",\n  \"status_aprovacao\": \"aprovado\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/diarios-consolidado/metadados",
+              "host": ["{{base_url}}"],
+              "path": ["diarios-consolidado", "metadados"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Diário Consolidado (View)",
+      "item": [
+        {
+          "name": "Listar Todos os Diários",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/diarios-consolidado",
+              "host": ["{{base_url}}"],
+              "path": ["diarios-consolidado"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar por Obra",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/diarios-consolidado/obra/5",
+              "host": ["{{base_url}}"],
+              "path": ["diarios-consolidado", "obra", "5"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar por Data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/diarios-consolidado/data/2024-11-14",
+              "host": ["{{base_url}}"],
+              "path": ["diarios-consolidado", "data", "2024-11-14"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. Relatório Formatado",
+      "item": [
+        {
+          "name": "Gerar Relatório Completo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/diarios/relatorio-formatado/5",
+              "host": ["{{base_url}}"],
+              "path": ["diarios", "relatorio-formatado", "5"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:9090",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

@@ -183,12 +183,12 @@ func (p *DiarioController) PutDiarioById(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "O campo 'Atividades Realizadas' é obrigatório."})
 		return // Stop processing
 	}
-	// Ocorrencias e Observacoes são OPCIONAIS - não validar
+
 	if !updatedDiario.ResponsavelID.Valid || updatedDiario.ResponsavelID.Int64 == 0 {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "O campo 'Responsável' é obrigatório."})
-		return // Stop processing
+		return
 	}
-	// Normalizar: tratar 0 como ausência (NULL) para aprovado_por_id
+
 	if updatedDiario.AprovadoPorID.Valid && updatedDiario.AprovadoPorID.Int64 == 0 {
 		updatedDiario.AprovadoPorID = null.Int{}
 	}

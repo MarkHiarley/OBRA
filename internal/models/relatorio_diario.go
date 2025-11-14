@@ -123,13 +123,14 @@ type FotosInfo struct {
 }
 
 // FotoInfo representa uma foto individual
+// FotoInfo contém informações sobre fotos anexadas ao diário
 type FotoInfo struct {
 	ID        int64       `json:"id"`
-	URL       string      `json:"url"`
+	URL       string      `json:"url"` // Base64 encoded image (data:image/jpeg;base64,...)
 	Descricao null.String `json:"descricao"`
 	Timestamp string      `json:"timestamp"`
 	LocalFoto null.String `json:"local_foto"`
-	Categoria string      `json:"categoria"`
+	Categoria string      `json:"categoria"` // Ex: "DIARIO", "OBRA", "OCORRENCIA"
 }
 
 // ProgressoInfo contém informações de progresso e medições

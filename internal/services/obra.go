@@ -22,14 +22,15 @@ func NewObraService(connection *sql.DB) ObraServices {
 func (pr *ObraServices) CreateObra(obra models.Obra) (int64, error) {
 	var id int64
 
-	query := `INSERT INTO obra (nome, contrato_numero, contratante_id, responsavel_id, data_inicio, prazo_dias, data_fim_prevista, orcamento, status, art, foto, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, ativo ) 
-			  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) 
+	query := `INSERT INTO obra (nome, contrato_numero, contratante_id, contratada, responsavel_id, data_inicio, prazo_dias, data_fim_prevista, orcamento, status, art, foto, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, ativo ) 
+			  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) 
 			  RETURNING id`
 
 	err := pr.connection.QueryRow(query,
 		obra.Nome.String,
 		obra.ContratoNumero.String,
 		obra.ContratanteID.Int64,
+		obra.Contratada.String,
 		obra.ResponsavelID.Int64,
 		obra.DataInicio.String,
 		obra.PrazoDias.Int64,
@@ -56,7 +57,7 @@ func (pr *ObraServices) CreateObra(obra models.Obra) (int64, error) {
 }
 
 func (pr *ObraServices) GetObras() ([]models.Obra, error) {
-	query := "select id, nome, contrato_numero, contratante_id, responsavel_id, data_inicio, prazo_dias, data_fim_prevista, orcamento, status, art, foto, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, ativo, created_at, updated_at from obra"
+	query := "select id, nome, contrato_numero, contratante_id, contratada, responsavel_id, data_inicio, prazo_dias, data_fim_prevista, orcamento, status, art, foto, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, ativo, created_at, updated_at from obra"
 	rows, err := pr.connection.Query(query)
 	if err != nil {
 		fmt.Println(err)
@@ -73,6 +74,7 @@ func (pr *ObraServices) GetObras() ([]models.Obra, error) {
 			&obraObj.Nome,
 			&obraObj.ContratoNumero,
 			&obraObj.ContratanteID,
+			&obraObj.Contratada,
 			&obraObj.ResponsavelID,
 			&obraObj.DataInicio,
 			&obraObj.PrazoDias,
@@ -108,7 +110,7 @@ func (pr *ObraServices) GetObras() ([]models.Obra, error) {
 func (pr ObraServices) GetObraById(id int64) (models.Obra, error) {
 
 	//id, nome, email, tipo_documento, documento, telefone, perfil_acesso, ativo, created_at, updated_at
-	query := "select id, nome, contrato_numero, contratante_id, responsavel_id, data_inicio, prazo_dias, data_fim_prevista, orcamento, status, art, foto, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, ativo, created_at, updated_at from obra where id = $1"
+	query := "select id, nome, contrato_numero, contratante_id, contratada, responsavel_id, data_inicio, prazo_dias, data_fim_prevista, orcamento, status, art, foto, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, ativo, created_at, updated_at from obra where id = $1"
 
 	row := pr.connection.QueryRow(query, id)
 	fmt.Println(query, id)
@@ -119,6 +121,7 @@ func (pr ObraServices) GetObraById(id int64) (models.Obra, error) {
 		&obra.Nome,
 		&obra.ContratoNumero,
 		&obra.ContratanteID,
+		&obra.Contratada,
 		&obra.ResponsavelID,
 		&obra.DataInicio,
 		&obra.PrazoDias,
@@ -158,32 +161,34 @@ func (pr ObraServices) PutObra(id int, ObraToUpdate models.Obra) (models.Obra, e
 		SET 
 			nome = $1,
 			contrato_numero = $2, 
-			contratante_id = $3, 
-			responsavel_id = $4, 
-			data_inicio = $5, 
-			prazo_dias = $6, 
-			data_fim_prevista = $7,
-			orcamento = $8,
-			status = $9,
-			art = $10,
-			foto = $11,
-			endereco_rua = $12,
-			endereco_numero = $13,
-			endereco_bairro = $14,
-			endereco_cidade = $15,
-			endereco_estado = $16,
-			endereco_cep = $17,
-			observacoes = $18,
-			ativo = $19,
-			updated_at = $20
-		WHERE id = $21
-		RETURNING id, nome, contrato_numero, contratante_id, responsavel_id, data_inicio, prazo_dias, data_fim_prevista, orcamento, status, art, foto, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, ativo, created_at, updated_at`
+			contratante_id = $3,
+			contratada = $4, 
+			responsavel_id = $5, 
+			data_inicio = $6, 
+			prazo_dias = $7, 
+			data_fim_prevista = $8,
+			orcamento = $9,
+			status = $10,
+			art = $11,
+			foto = $12,
+			endereco_rua = $13,
+			endereco_numero = $14,
+			endereco_bairro = $15,
+			endereco_cidade = $16,
+			endereco_estado = $17,
+			endereco_cep = $18,
+			observacoes = $19,
+			ativo = $20,
+			updated_at = $21
+		WHERE id = $22
+		RETURNING id, nome, contrato_numero, contratante_id, contratada, responsavel_id, data_inicio, prazo_dias, data_fim_prevista, orcamento, status, art, foto, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, ativo, created_at, updated_at`
 	var updatedObra models.Obra
 
 	err := pr.connection.QueryRowContext(context.Background(), query,
 		ObraToUpdate.Nome.String,
 		ObraToUpdate.ContratoNumero.String,
 		ObraToUpdate.ContratanteID.Int64,
+		ObraToUpdate.Contratada.String,
 		ObraToUpdate.ResponsavelID.Int64,
 		ObraToUpdate.DataInicio.String,
 		ObraToUpdate.PrazoDias.Int64,
@@ -207,6 +212,7 @@ func (pr ObraServices) PutObra(id int, ObraToUpdate models.Obra) (models.Obra, e
 		&updatedObra.Nome,
 		&updatedObra.ContratoNumero,
 		&updatedObra.ContratanteID,
+		&updatedObra.Contratada,
 		&updatedObra.ResponsavelID,
 		&updatedObra.DataInicio,
 		&updatedObra.PrazoDias,
