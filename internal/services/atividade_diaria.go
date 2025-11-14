@@ -8,16 +8,18 @@ import (
 )
 
 type AtividadeDiariaService struct {
-	connection *sql.DB
+	connection       *sql.DB
+	fotoService      *FotoDiarioService
 }
 
 func NewAtividadeDiariaService(connection *sql.DB) AtividadeDiariaService {
 	return AtividadeDiariaService{
-		connection: connection,
+		connection:  connection,
+		fotoService: &FotoDiarioService{connection: connection},
 	}
 }
 
-// CreateAtividade cria uma nova atividade diária
+// CreateAtividade cria uma nova atividade diária com suas fotos
 func (ads *AtividadeDiariaService) CreateAtividade(atividade models.AtividadeDiaria) (models.AtividadeDiaria, error) {
 	query := `
 		INSERT INTO atividade_diaria (obra_id, data, periodo, descricao, responsavel_id, status, percentual_conclusao, observacao)
@@ -41,10 +43,18 @@ func (ads *AtividadeDiariaService) CreateAtividade(atividade models.AtividadeDia
 		return models.AtividadeDiaria{}, fmt.Errorf("erro ao criar atividade: %v", err)
 	}
 
+	// Salvar fotos relacionadas se houver
+	if len(atividade.Fotos) > 0 && atividade.ID.Valid {
+		err = ads.fotoService.CreateFotos(atividade.Fotos, "atividade", atividade.ID.Int64)
+		if err != nil {
+			return models.AtividadeDiaria{}, fmt.Errorf("erro ao salvar fotos da atividade: %v", err)
+		}
+	}
+
 	return atividade, nil
 }
 
-// GetAtividades retorna todas as atividades com relacionamentos
+// GetAtividades retorna todas as atividades com relacionamentos e fotos
 func (ads *AtividadeDiariaService) GetAtividades() ([]models.AtividadeDiariaComRelacionamentos, error) {
 	query := `
 		SELECT a.id, a.obra_id, a.data, a.periodo, a.descricao, a.responsavel_id, 
@@ -73,6 +83,15 @@ func (ads *AtividadeDiariaService) GetAtividades() ([]models.AtividadeDiariaComR
 		if err != nil {
 			return nil, fmt.Errorf("erro ao escanear atividade: %v", err)
 		}
+
+		// Buscar fotos da atividade
+		if ativ.ID.Valid {
+			fotos, err := ads.fotoService.GetFotosByEntidade("atividade", ativ.ID.Int64)
+			if err == nil {
+				ativ.Fotos = fotos
+			}
+		}
+
 		atividades = append(atividades, ativ)
 	}
 

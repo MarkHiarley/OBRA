@@ -8,16 +8,18 @@ import (
 )
 
 type OcorrenciaDiariaService struct {
-	connection *sql.DB
+	connection  *sql.DB
+	fotoService *FotoDiarioService
 }
 
 func NewOcorrenciaDiariaService(connection *sql.DB) OcorrenciaDiariaService {
 	return OcorrenciaDiariaService{
-		connection: connection,
+		connection:  connection,
+		fotoService: &FotoDiarioService{connection: connection},
 	}
 }
 
-// CreateOcorrencia cria uma nova ocorrência diária
+// CreateOcorrencia cria uma nova ocorrência diária com suas fotos
 func (ods *OcorrenciaDiariaService) CreateOcorrencia(ocorrencia models.OcorrenciaDiaria) (models.OcorrenciaDiaria, error) {
 	query := `
 		INSERT INTO ocorrencia_diaria (obra_id, data, periodo, tipo, gravidade, descricao, responsavel_id, status_resolucao, acao_tomada)
@@ -40,6 +42,14 @@ func (ods *OcorrenciaDiariaService) CreateOcorrencia(ocorrencia models.Ocorrenci
 
 	if err != nil {
 		return models.OcorrenciaDiaria{}, fmt.Errorf("erro ao criar ocorrência: %v", err)
+	}
+
+	// Salvar fotos relacionadas se houver
+	if len(ocorrencia.Fotos) > 0 && ocorrencia.ID.Valid {
+		err = ods.fotoService.CreateFotos(ocorrencia.Fotos, "ocorrencia", ocorrencia.ID.Int64)
+		if err != nil {
+			return models.OcorrenciaDiaria{}, fmt.Errorf("erro ao salvar fotos da ocorrência: %v", err)
+		}
 	}
 
 	return ocorrencia, nil

@@ -8,17 +8,18 @@ import (
 
 // AtividadeDiaria representa uma atividade individual realizada em um dia específico
 type AtividadeDiaria struct {
-	ID                  null.Int    `json:"id"`
-	ObraID              null.Int    `json:"obra_id" binding:"required"`
-	Data                null.String `json:"data" binding:"required"` // "2024-10-08"
-	Periodo             null.String `json:"periodo"`                 // manha, tarde, integral, noite
-	Descricao           null.String `json:"descricao" binding:"required"`
-	ResponsavelID       null.Int    `json:"responsavel_id,omitempty"`
-	Status              null.String `json:"status"`               // planejada, em_andamento, concluida, cancelada
-	PercentualConclusao null.Int    `json:"percentual_conclusao"` // 0-100
-	Observacao          null.String `json:"observacao,omitempty"`
-	CreatedAt           time.Time   `json:"created_at"`
-	UpdatedAt           time.Time   `json:"updated_at"`
+	ID                  null.Int     `json:"id"`
+	ObraID              null.Int     `json:"obra_id" binding:"required"`
+	Data                null.String  `json:"data" binding:"required"` // "2024-10-08"
+	Periodo             null.String  `json:"periodo"`                 // manha, tarde, integral, noite
+	Descricao           null.String  `json:"descricao" binding:"required"`
+	ResponsavelID       null.Int     `json:"responsavel_id,omitempty"`
+	Status              null.String  `json:"status"`               // planejada, em_andamento, concluida, cancelada
+	PercentualConclusao null.Int     `json:"percentual_conclusao"` // 0-100
+	Observacao          null.String  `json:"observacao,omitempty"`
+	Fotos               []FotoDiario `json:"fotos,omitempty"` // Array de fotos relacionadas à atividade
+	CreatedAt           time.Time    `json:"created_at"`
+	UpdatedAt           time.Time    `json:"updated_at"`
 }
 
 // AtividadeDiariaComRelacionamentos inclui dados relacionados
@@ -30,18 +31,19 @@ type AtividadeDiariaComRelacionamentos struct {
 
 // OcorrenciaDiaria representa uma ocorrência/problema registrado em um dia específico
 type OcorrenciaDiaria struct {
-	ID              null.Int    `json:"id"`
-	ObraID          null.Int    `json:"obra_id" binding:"required"`
-	Data            null.String `json:"data" binding:"required"` // "2024-10-08"
-	Periodo         null.String `json:"periodo"`                 // manha, tarde, integral, noite
-	Tipo            null.String `json:"tipo"`                    // seguranca, qualidade, prazo, custo, clima, equipamento, material, geral
-	Gravidade       null.String `json:"gravidade"`               // baixa, media, alta, critica
-	Descricao       null.String `json:"descricao" binding:"required"`
-	ResponsavelID   null.Int    `json:"responsavel_id,omitempty"`
-	StatusResolucao null.String `json:"status_resolucao"` // pendente, em_analise, resolvida, nao_aplicavel
-	AcaoTomada      null.String `json:"acao_tomada,omitempty"`
-	CreatedAt       time.Time   `json:"created_at"`
-	UpdatedAt       time.Time   `json:"updated_at"`
+	ID              null.Int     `json:"id"`
+	ObraID          null.Int     `json:"obra_id" binding:"required"`
+	Data            null.String  `json:"data" binding:"required"` // "2024-10-08"
+	Periodo         null.String  `json:"periodo"`                 // manha, tarde, integral, noite
+	Tipo            null.String  `json:"tipo"`                    // seguranca, qualidade, prazo, custo, clima, equipamento, material, geral
+	Gravidade       null.String  `json:"gravidade"`               // baixa, media, alta, critica
+	Descricao       null.String  `json:"descricao" binding:"required"`
+	ResponsavelID   null.Int     `json:"responsavel_id,omitempty"`
+	StatusResolucao null.String  `json:"status_resolucao"` // pendente, em_analise, resolvida, nao_aplicavel
+	AcaoTomada      null.String  `json:"acao_tomada,omitempty"`
+	Fotos           []FotoDiario `json:"fotos,omitempty"` // Array de fotos relacionadas à ocorrência
+	CreatedAt       time.Time    `json:"created_at"`
+	UpdatedAt       time.Time    `json:"updated_at"`
 }
 
 // OcorrenciaDiariaComRelacionamentos inclui dados relacionados
@@ -51,19 +53,36 @@ type OcorrenciaDiariaComRelacionamentos struct {
 	ResponsavelNome null.String `json:"responsavel_nome,omitempty"`
 }
 
+// FotoDiario armazena múltiplas fotos relacionadas a diários, atividades ou ocorrências
+type FotoDiario struct {
+	ID            null.Int    `json:"id"`
+	EntidadeTipo  string      `json:"entidade_tipo"`            // metadados, atividade, ocorrencia
+	EntidadeID    null.Int    `json:"entidade_id"`              // ID da entidade relacionada
+	Foto          string      `json:"foto" binding:"required"`  // Base64 encoded image (data:image/jpeg;base64,...)
+	Descricao     null.String `json:"descricao,omitempty"`      // Descrição da foto
+	Ordem         null.Int    `json:"ordem"`                    // Ordem de exibição (0 = primeira)
+	Categoria     null.String `json:"categoria"`                // DIARIO, OBRA, OCORRENCIA, ATIVIDADE, SEGURANCA
+	Largura       null.Int    `json:"largura,omitempty"`        // Largura da imagem em pixels
+	Altura        null.Int    `json:"altura,omitempty"`         // Altura da imagem em pixels
+	TamanhoBytes  null.Int    `json:"tamanho_bytes,omitempty"`  // Tamanho em bytes
+	CreatedAt     time.Time   `json:"created_at"`
+	UpdatedAt     time.Time   `json:"updated_at"`
+}
+
 // DiarioMetadados armazena informações complementares do diário (foto, aprovação, observações)
 type DiarioMetadados struct {
-	ID              null.Int    `json:"id"`
-	ObraID          null.Int    `json:"obra_id" binding:"required"`
-	Data            null.String `json:"data" binding:"required"` // "2024-10-08"
-	Periodo         null.String `json:"periodo"`                 // manha, tarde, integral, noite
-	Foto            null.String `json:"foto,omitempty"`          // Base64 encoded image
-	Observacoes     null.String `json:"observacoes,omitempty"`
-	ResponsavelID   null.Int    `json:"responsavel_id,omitempty"`
-	AprovadoPorID   null.Int    `json:"aprovado_por_id,omitempty"`
-	StatusAprovacao null.String `json:"status_aprovacao"` // pendente, aprovado, rejeitado
-	CreatedAt       time.Time   `json:"created_at"`
-	UpdatedAt       time.Time   `json:"updated_at"`
+	ID              null.Int     `json:"id"`
+	ObraID          null.Int     `json:"obra_id" binding:"required"`
+	Data            null.String  `json:"data" binding:"required"` // "2024-10-08"
+	Periodo         null.String  `json:"periodo"`                 // manha, tarde, integral, noite
+	Foto            null.String  `json:"foto,omitempty"`          // DEPRECATED: Use Fotos[]
+	Fotos           []FotoDiario `json:"fotos,omitempty"`         // Array de fotos em Base64
+	Observacoes     null.String  `json:"observacoes,omitempty"`
+	ResponsavelID   null.Int     `json:"responsavel_id,omitempty"`
+	AprovadoPorID   null.Int     `json:"aprovado_por_id,omitempty"`
+	StatusAprovacao null.String  `json:"status_aprovacao"` // pendente, aprovado, rejeitado
+	CreatedAt       time.Time    `json:"created_at"`
+	UpdatedAt       time.Time    `json:"updated_at"`
 }
 
 // DiarioConsolidado representa a view agregada (gerada dinamicamente)
