@@ -8,8 +8,8 @@ import (
 )
 
 type AtividadeDiariaService struct {
-	connection       *sql.DB
-	fotoService      *FotoDiarioService
+	connection  *sql.DB
+	fotoService *FotoDiarioService
 }
 
 func NewAtividadeDiariaService(connection *sql.DB) AtividadeDiariaService {

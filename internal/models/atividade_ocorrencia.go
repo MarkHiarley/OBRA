@@ -55,18 +55,18 @@ type OcorrenciaDiariaComRelacionamentos struct {
 
 // FotoDiario armazena múltiplas fotos relacionadas a diários, atividades ou ocorrências
 type FotoDiario struct {
-	ID            null.Int    `json:"id"`
-	EntidadeTipo  string      `json:"entidade_tipo"`            // metadados, atividade, ocorrencia
-	EntidadeID    null.Int    `json:"entidade_id"`              // ID da entidade relacionada
-	Foto          string      `json:"foto" binding:"required"`  // Base64 encoded image (data:image/jpeg;base64,...)
-	Descricao     null.String `json:"descricao,omitempty"`      // Descrição da foto
-	Ordem         null.Int    `json:"ordem"`                    // Ordem de exibição (0 = primeira)
-	Categoria     null.String `json:"categoria"`                // DIARIO, OBRA, OCORRENCIA, ATIVIDADE, SEGURANCA
-	Largura       null.Int    `json:"largura,omitempty"`        // Largura da imagem em pixels
-	Altura        null.Int    `json:"altura,omitempty"`         // Altura da imagem em pixels
-	TamanhoBytes  null.Int    `json:"tamanho_bytes,omitempty"`  // Tamanho em bytes
-	CreatedAt     time.Time   `json:"created_at"`
-	UpdatedAt     time.Time   `json:"updated_at"`
+	ID           null.Int    `json:"id"`
+	EntidadeTipo string      `json:"entidade_tipo"`           // metadados, atividade, ocorrencia
+	EntidadeID   null.Int    `json:"entidade_id"`             // ID da entidade relacionada
+	Foto         string      `json:"foto" binding:"required"` // Base64 encoded image (data:image/jpeg;base64,...)
+	Descricao    null.String `json:"descricao,omitempty"`     // Descrição da foto
+	Ordem        null.Int    `json:"ordem"`                   // Ordem de exibição (0 = primeira)
+	Categoria    null.String `json:"categoria"`               // DIARIO, OBRA, OCORRENCIA, ATIVIDADE, SEGURANCA
+	Largura      null.Int    `json:"largura,omitempty"`       // Largura da imagem em pixels
+	Altura       null.Int    `json:"altura,omitempty"`        // Altura da imagem em pixels
+	TamanhoBytes null.Int    `json:"tamanho_bytes,omitempty"` // Tamanho em bytes
+	CreatedAt    time.Time   `json:"created_at"`
+	UpdatedAt    time.Time   `json:"updated_at"`
 }
 
 // DiarioMetadados armazena informações complementares do diário (foto, aprovação, observações)
