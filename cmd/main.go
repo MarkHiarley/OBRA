@@ -157,9 +157,9 @@ func main() {
 
 		// EQUIPE DIARIO
 		protected.POST("/equipe-diario", equipeDiarioController.Create)
-		protected.GET("/equipe-diario/obra/:obra_id", equipeDiarioController.GetByObraId)                   // Nova rota: todas as datas
-		protected.GET("/equipe-diario/obra/:obra_id/data/:data", equipeDiarioController.GetByObraAndData)   // Nova rota: data específica
-		protected.GET("/equipe-diario/diario/:diario_id", equipeDiarioController.GetByDiarioId)             // Legado: deprecated
+		protected.GET("/equipe-diario/obra/:obra_id", equipeDiarioController.GetByObraId)                 // Nova rota: todas as datas
+		protected.GET("/equipe-diario/obra/:obra_id/data/:data", equipeDiarioController.GetByObraAndData) // Nova rota: data específica
+		protected.GET("/equipe-diario/diario/:diario_id", equipeDiarioController.GetByDiarioId)           // Legado: deprecated
 		protected.PUT("/equipe-diario/:id", equipeDiarioController.Update)
 		protected.DELETE("/equipe-diario/:id", equipeDiarioController.Delete)
 
@@ -180,7 +180,7 @@ func main() {
 		// TAREFAS REALIZADAS
 		protected.POST("/tarefas", atividadeDiariaController.CreateAtividade)
 		protected.GET("/tarefas", atividadeDiariaController.GetAtividades)
-		protected.GET("/tarefas/obra/:obra_id", atividadeDiariaController.GetAtividadesByObra)               // Nova rota: todas as datas
+		protected.GET("/tarefas/obra/:obra_id", atividadeDiariaController.GetAtividadesByObra)                // Nova rota: todas as datas
 		protected.GET("/tarefas/obra/:obra_id/data/:data", atividadeDiariaController.GetAtividadesByObraData) // Rota específica com data
 		protected.PUT("/tarefas/:id", atividadeDiariaController.UpdateAtividade)
 		protected.DELETE("/tarefas/:id", atividadeDiariaController.DeleteAtividade)
@@ -188,7 +188,7 @@ func main() {
 		// OCORRÊNCIAS
 		protected.POST("/ocorrencias", ocorrenciaDiariaController.CreateOcorrencia)
 		protected.GET("/ocorrencias", ocorrenciaDiariaController.GetOcorrencias)
-		protected.GET("/ocorrencias/obra/:obra_id", ocorrenciaDiariaController.GetOcorrenciasByObra)               // Nova rota: todas as datas
+		protected.GET("/ocorrencias/obra/:obra_id", ocorrenciaDiariaController.GetOcorrenciasByObra)                // Nova rota: todas as datas
 		protected.GET("/ocorrencias/obra/:obra_id/data/:data", ocorrenciaDiariaController.GetOcorrenciasByObraData) // Rota específica com data
 		protected.GET("/ocorrencias/gravidade/:gravidade", ocorrenciaDiariaController.GetOcorrenciasByGravidade)
 		protected.PUT("/ocorrencias/:id", ocorrenciaDiariaController.UpdateOcorrencia)
