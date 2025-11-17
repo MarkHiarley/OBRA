@@ -52,6 +52,46 @@ func (c *EquipeDiarioController) GetByDiarioId(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"data": equipes})
 }
 
+func (c *EquipeDiarioController) GetByObraId(ctx *gin.Context) {
+	obraIdStr := ctx.Param("obra_id")
+	obraId, err := strconv.Atoi(obraIdStr)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "ID da obra inválido"})
+		return
+	}
+
+	equipes, err := c.useCase.GetByObraId(obraId)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"data": equipes})
+}
+
+func (c *EquipeDiarioController) GetByObraAndData(ctx *gin.Context) {
+	obraIdStr := ctx.Param("obra_id")
+	obraId, err := strconv.Atoi(obraIdStr)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "ID da obra inválido"})
+		return
+	}
+
+	data := ctx.Param("data")
+	if data == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Data é obrigatória"})
+		return
+	}
+
+	equipes, err := c.useCase.GetByObraAndData(obraId, data)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"data": equipes})
+}
+
 func (c *EquipeDiarioController) Update(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.Atoi(idStr)

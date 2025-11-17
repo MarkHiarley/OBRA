@@ -56,6 +56,14 @@ func (auc *AtividadeDiariaUseCase) GetAtividades() ([]models.AtividadeDiariaComR
 	return auc.atividadeService.GetAtividades()
 }
 
+func (auc *AtividadeDiariaUseCase) GetAtividadesByObra(obraID int) ([]models.AtividadeDiariaComRelacionamentos, error) {
+	if obraID <= 0 {
+		return nil, fmt.Errorf("ID da obra inválido")
+	}
+
+	return auc.atividadeService.GetAtividadesByObra(obraID)
+}
+
 func (auc *AtividadeDiariaUseCase) GetAtividadesByObraData(obraID int, data string) ([]models.AtividadeDiariaComRelacionamentos, error) {
 	if obraID <= 0 {
 		return nil, fmt.Errorf("ID da obra inválido")

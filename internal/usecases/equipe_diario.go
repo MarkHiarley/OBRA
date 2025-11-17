@@ -28,6 +28,23 @@ func (uc *EquipeDiarioUseCase) GetByDiarioId(diarioId int64) ([]models.EquipeDia
 	return uc.service.GetByDiarioId(diarioId)
 }
 
+func (uc *EquipeDiarioUseCase) GetByObraId(obraId int) ([]models.EquipeDiario, error) {
+	if obraId <= 0 {
+		return nil, fmt.Errorf("ID da obra inválido")
+	}
+	return uc.service.GetByObraId(int64(obraId))
+}
+
+func (uc *EquipeDiarioUseCase) GetByObraAndData(obraId int, data string) ([]models.EquipeDiario, error) {
+	if obraId <= 0 {
+		return nil, fmt.Errorf("ID da obra inválido")
+	}
+	if data == "" {
+		return nil, fmt.Errorf("data é obrigatória")
+	}
+	return uc.service.GetByObraAndData(int64(obraId), data)
+}
+
 func (uc *EquipeDiarioUseCase) Update(id int, equipe models.EquipeDiario) (models.EquipeDiario, error) {
 	return uc.service.Update(id, equipe)
 }

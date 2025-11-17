@@ -91,6 +91,52 @@ func (ods *OcorrenciaDiariaService) GetOcorrencias() ([]models.OcorrenciaDiariaC
 	return ocorrencias, nil
 }
 
+// GetOcorrenciasByObra retorna todas as ocorrências de uma obra (todas as datas)
+func (ods *OcorrenciaDiariaService) GetOcorrenciasByObra(obraID int) ([]models.OcorrenciaDiariaComRelacionamentos, error) {
+	query := `
+		SELECT oc.id, oc.obra_id, oc.data, oc.periodo, oc.tipo, oc.gravidade, 
+		       oc.descricao, oc.responsavel_id, oc.status_resolucao, oc.acao_tomada,
+		       oc.created_at, oc.updated_at,
+		       o.nome as obra_nome, p.nome as responsavel_nome
+		FROM ocorrencia_diaria oc
+		LEFT JOIN obra o ON oc.obra_id = o.id
+		LEFT JOIN pessoa p ON oc.responsavel_id = p.id
+		WHERE oc.obra_id = $1
+		ORDER BY oc.data DESC, oc.gravidade DESC, oc.created_at DESC
+	`
+
+	rows, err := ods.connection.Query(query, obraID)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar ocorrências da obra: %v", err)
+	}
+	defer rows.Close()
+
+	var ocorrencias []models.OcorrenciaDiariaComRelacionamentos
+	for rows.Next() {
+		var oc models.OcorrenciaDiariaComRelacionamentos
+		err := rows.Scan(
+			&oc.ID, &oc.ObraID, &oc.Data, &oc.Periodo, &oc.Tipo, &oc.Gravidade,
+			&oc.Descricao, &oc.ResponsavelID, &oc.StatusResolucao, &oc.AcaoTomada,
+			&oc.CreatedAt, &oc.UpdatedAt, &oc.ObraNome, &oc.ResponsavelNome,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("erro ao escanear ocorrência: %v", err)
+		}
+
+		// Buscar fotos da ocorrência
+		if oc.ID.Valid {
+			fotos, err := ods.fotoService.GetFotosByEntidade("ocorrencia", oc.ID.Int64)
+			if err == nil {
+				oc.Fotos = fotos
+			}
+		}
+
+		ocorrencias = append(ocorrencias, oc)
+	}
+
+	return ocorrencias, nil
+}
+
 // GetOcorrenciasByObraData retorna ocorrências filtradas por obra e data
 func (ods *OcorrenciaDiariaService) GetOcorrenciasByObraData(obraID int, data string) ([]models.OcorrenciaDiariaComRelacionamentos, error) {
 	query := `

@@ -60,6 +60,14 @@ func (ouc *OcorrenciaDiariaUseCase) GetOcorrencias() ([]models.OcorrenciaDiariaC
 	return ouc.ocorrenciaService.GetOcorrencias()
 }
 
+func (ouc *OcorrenciaDiariaUseCase) GetOcorrenciasByObra(obraID int) ([]models.OcorrenciaDiariaComRelacionamentos, error) {
+	if obraID <= 0 {
+		return nil, fmt.Errorf("ID da obra inválido")
+	}
+
+	return ouc.ocorrenciaService.GetOcorrenciasByObra(obraID)
+}
+
 func (ouc *OcorrenciaDiariaUseCase) GetOcorrenciasByObraData(obraID int, data string) ([]models.OcorrenciaDiariaComRelacionamentos, error) {
 	if obraID <= 0 {
 		return nil, fmt.Errorf("ID da obra inválido")

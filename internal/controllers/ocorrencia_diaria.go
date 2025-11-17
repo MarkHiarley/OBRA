@@ -58,6 +58,24 @@ func (odc *OcorrenciaDiariaController) GetOcorrencias(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"data": ocorrencias})
 }
 
+// GetOcorrenciasByObra retorna todas as ocorrências de uma obra (todas as datas)
+func (odc *OcorrenciaDiariaController) GetOcorrenciasByObra(ctx *gin.Context) {
+	obraIDParam := ctx.Param("obra_id")
+	obraID, err := strconv.Atoi(obraIDParam)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "ID da obra inválido"})
+		return
+	}
+
+	ocorrencias, err := odc.ocorrenciaUseCase.GetOcorrenciasByObra(obraID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"data": ocorrencias})
+}
+
 // GetOcorrenciasByObraData retorna ocorrências filtradas por obra e data
 func (odc *OcorrenciaDiariaController) GetOcorrenciasByObraData(ctx *gin.Context) {
 	obraIDParam := ctx.Param("obra_id")

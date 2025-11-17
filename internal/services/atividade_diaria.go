@@ -98,6 +98,51 @@ func (ads *AtividadeDiariaService) GetAtividades() ([]models.AtividadeDiariaComR
 	return atividades, nil
 }
 
+// GetAtividadesByObra retorna todas as atividades de uma obra (todas as datas)
+func (ads *AtividadeDiariaService) GetAtividadesByObra(obraID int) ([]models.AtividadeDiariaComRelacionamentos, error) {
+	query := `
+		SELECT a.id, a.obra_id, a.data, a.periodo, a.descricao, a.responsavel_id, 
+		       a.status, a.percentual_conclusao, a.observacao, a.created_at, a.updated_at,
+		       o.nome as obra_nome, p.nome as responsavel_nome
+		FROM atividade_diaria a
+		LEFT JOIN obra o ON a.obra_id = o.id
+		LEFT JOIN pessoa p ON a.responsavel_id = p.id
+		WHERE a.obra_id = $1
+		ORDER BY a.data DESC, a.created_at DESC
+	`
+
+	rows, err := ads.connection.Query(query, obraID)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar atividades da obra: %v", err)
+	}
+	defer rows.Close()
+
+	var atividades []models.AtividadeDiariaComRelacionamentos
+	for rows.Next() {
+		var ativ models.AtividadeDiariaComRelacionamentos
+		err := rows.Scan(
+			&ativ.ID, &ativ.ObraID, &ativ.Data, &ativ.Periodo, &ativ.Descricao,
+			&ativ.ResponsavelID, &ativ.Status, &ativ.PercentualConclusao, &ativ.Observacao,
+			&ativ.CreatedAt, &ativ.UpdatedAt, &ativ.ObraNome, &ativ.ResponsavelNome,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("erro ao escanear atividade: %v", err)
+		}
+
+		// Buscar fotos da atividade
+		if ativ.ID.Valid {
+			fotos, err := ads.fotoService.GetFotosByEntidade("atividade", ativ.ID.Int64)
+			if err == nil {
+				ativ.Fotos = fotos
+			}
+		}
+
+		atividades = append(atividades, ativ)
+	}
+
+	return atividades, nil
+}
+
 // GetAtividadesByObraData retorna atividades filtradas por obra e data
 func (ads *AtividadeDiariaService) GetAtividadesByObraData(obraID int, data string) ([]models.AtividadeDiariaComRelacionamentos, error) {
 	query := `

@@ -58,6 +58,24 @@ func (adc *AtividadeDiariaController) GetAtividades(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"data": atividades})
 }
 
+// GetAtividadesByObra retorna todas as atividades de uma obra (todas as datas)
+func (adc *AtividadeDiariaController) GetAtividadesByObra(ctx *gin.Context) {
+	obraIDParam := ctx.Param("obra_id")
+	obraID, err := strconv.Atoi(obraIDParam)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "ID da obra inválido"})
+		return
+	}
+
+	atividades, err := adc.atividadeUseCase.GetAtividadesByObra(obraID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"data": atividades})
+}
+
 // GetAtividadesByObraData retorna atividades filtradas por obra e data
 func (adc *AtividadeDiariaController) GetAtividadesByObraData(ctx *gin.Context) {
 	obraIDParam := ctx.Param("obra_id")
