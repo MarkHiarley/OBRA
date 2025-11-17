@@ -21,12 +21,13 @@ func NewEquipeDiarioService(connection *sql.DB) EquipeDiarioService {
 func (s *EquipeDiarioService) Create(equipe models.EquipeDiario) (int64, error) {
 	var id int64
 
-	query := `INSERT INTO equipe_diario (diario_id, codigo, descricao, quantidade_utilizada, horas_trabalhadas, observacoes) 
-              VALUES ($1, $2, $3, $4, $5, $6) 
+	query := `INSERT INTO equipe_diario (obra_id, data, codigo, descricao, quantidade_utilizada, horas_trabalhadas, observacoes) 
+              VALUES ($1, $2, $3, $4, $5, $6, $7) 
               RETURNING id`
 
 	err := s.connection.QueryRow(query,
-		equipe.DiarioID.Int64,
+		equipe.ObraID.Int64,
+		equipe.Data.String,
 		equipe.Codigo.String,
 		equipe.Descricao.String,
 		equipe.QuantidadeUtilizada.Int64,
@@ -41,10 +42,16 @@ func (s *EquipeDiarioService) Create(equipe models.EquipeDiario) (int64, error) 
 }
 
 func (s *EquipeDiarioService) GetByDiarioId(diarioId int64) ([]models.EquipeDiario, error) {
-	query := `SELECT id, diario_id, codigo, descricao, quantidade_utilizada, horas_trabalhadas, observacoes, created_at, updated_at 
-	          FROM equipe_diario WHERE diario_id = $1`
+	// Método deprecated - manter por compatibilidade temporária
+	return []models.EquipeDiario{}, fmt.Errorf("método descontinuado - use GetByObraAndData")
+}
 
-	rows, err := s.connection.Query(query, diarioId)
+func (s *EquipeDiarioService) GetByObraAndData(obraId int64, data string) ([]models.EquipeDiario, error) {
+	query := `SELECT id, obra_id, data, codigo, descricao, quantidade_utilizada, horas_trabalhadas, observacoes, created_at, updated_at 
+	          FROM equipe_diario WHERE obra_id = $1 AND data = $2
+	          ORDER BY created_at DESC`
+
+	rows, err := s.connection.Query(query, obraId, data)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +62,43 @@ func (s *EquipeDiarioService) GetByDiarioId(diarioId int64) ([]models.EquipeDiar
 		var equipe models.EquipeDiario
 		err = rows.Scan(
 			&equipe.ID,
-			&equipe.DiarioID,
+			&equipe.ObraID,
+			&equipe.Data,
+			&equipe.Codigo,
+			&equipe.Descricao,
+			&equipe.QuantidadeUtilizada,
+			&equipe.HorasTrabalhadas,
+			&equipe.Observacoes,
+			&equipe.CreatedAt,
+			&equipe.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		equipes = append(equipes, equipe)
+	}
+
+	return equipes, nil
+}
+
+func (s *EquipeDiarioService) GetByObraId(obraId int64) ([]models.EquipeDiario, error) {
+	query := `SELECT id, obra_id, data, codigo, descricao, quantidade_utilizada, horas_trabalhadas, observacoes, created_at, updated_at 
+	          FROM equipe_diario WHERE obra_id = $1
+	          ORDER BY data DESC, created_at DESC`
+
+	rows, err := s.connection.Query(query, obraId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var equipes []models.EquipeDiario
+	for rows.Next() {
+		var equipe models.EquipeDiario
+		err = rows.Scan(
+			&equipe.ID,
+			&equipe.ObraID,
+			&equipe.Data,
 			&equipe.Codigo,
 			&equipe.Descricao,
 			&equipe.QuantidadeUtilizada,
@@ -78,7 +121,7 @@ func (s *EquipeDiarioService) Update(id int, equipe models.EquipeDiario) (models
               SET codigo = $1, descricao = $2, quantidade_utilizada = $3, horas_trabalhadas = $4, 
                   observacoes = $5, updated_at = $6
               WHERE id = $7
-              RETURNING id, diario_id, codigo, descricao, quantidade_utilizada, horas_trabalhadas, observacoes, created_at, updated_at`
+              RETURNING id, obra_id, data, codigo, descricao, quantidade_utilizada, horas_trabalhadas, observacoes, created_at, updated_at`
 
 	var updated models.EquipeDiario
 
@@ -92,7 +135,8 @@ func (s *EquipeDiarioService) Update(id int, equipe models.EquipeDiario) (models
 		id,
 	).Scan(
 		&updated.ID,
-		&updated.DiarioID,
+		&updated.ObraID,
+		&updated.Data,
 		&updated.Codigo,
 		&updated.Descricao,
 		&updated.QuantidadeUtilizada,

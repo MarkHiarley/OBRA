@@ -21,12 +21,13 @@ func NewMaterialDiarioService(connection *sql.DB) MaterialDiarioService {
 func (s *MaterialDiarioService) Create(material models.MaterialDiario) (int64, error) {
 	var id int64
 
-	query := `INSERT INTO material_diario (diario_id, codigo, descricao, quantidade, unidade, fornecedor, valor_unitario, valor_total, observacoes) 
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+	query := `INSERT INTO material_diario (obra_id, data, codigo, descricao, quantidade, unidade, fornecedor, valor_unitario, valor_total, observacoes) 
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
               RETURNING id`
 
 	err := s.connection.QueryRow(query,
-		material.DiarioID.Int64,
+		material.ObraID.Int64,
+		material.Data.String,
 		material.Codigo.String,
 		material.Descricao.String,
 		material.Quantidade.Float64,
@@ -44,8 +45,8 @@ func (s *MaterialDiarioService) Create(material models.MaterialDiario) (int64, e
 }
 
 func (s *MaterialDiarioService) GetByDiarioId(diarioId int64) ([]models.MaterialDiario, error) {
-	query := `SELECT id, diario_id, codigo, descricao, quantidade, unidade, fornecedor, valor_unitario, valor_total, observacoes, created_at, updated_at 
-	          FROM material_diario WHERE diario_id = $1`
+	query := `SELECT id, obra_id, data, codigo, descricao, quantidade, unidade, fornecedor, valor_unitario, valor_total, observacoes, created_at, updated_at 
+	          FROM material_diario WHERE obra_id = $1`
 
 	rows, err := s.connection.Query(query, diarioId)
 	if err != nil {
@@ -58,7 +59,8 @@ func (s *MaterialDiarioService) GetByDiarioId(diarioId int64) ([]models.Material
 		var material models.MaterialDiario
 		err = rows.Scan(
 			&material.ID,
-			&material.DiarioID,
+			&material.ObraID,
+			&material.Data,
 			&material.Codigo,
 			&material.Descricao,
 			&material.Quantidade,
@@ -84,7 +86,7 @@ func (s *MaterialDiarioService) Update(id int, material models.MaterialDiario) (
               SET codigo = $1, descricao = $2, quantidade = $3, unidade = $4, fornecedor = $5,
                   valor_unitario = $6, valor_total = $7, observacoes = $8, updated_at = $9
               WHERE id = $10
-              RETURNING id, diario_id, codigo, descricao, quantidade, unidade, fornecedor, valor_unitario, valor_total, observacoes, created_at, updated_at`
+              RETURNING id, obra_id, data, codigo, descricao, quantidade, unidade, fornecedor, valor_unitario, valor_total, observacoes, created_at, updated_at`
 
 	var updated models.MaterialDiario
 
@@ -101,7 +103,8 @@ func (s *MaterialDiarioService) Update(id int, material models.MaterialDiario) (
 		id,
 	).Scan(
 		&updated.ID,
-		&updated.DiarioID,
+		&updated.ObraID,
+		&updated.Data,
 		&updated.Codigo,
 		&updated.Descricao,
 		&updated.Quantidade,

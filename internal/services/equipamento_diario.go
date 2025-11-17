@@ -21,12 +21,13 @@ func NewEquipamentoDiarioService(connection *sql.DB) EquipamentoDiarioService {
 func (s *EquipamentoDiarioService) Create(equipamento models.EquipamentoDiario) (int64, error) {
 	var id int64
 
-	query := `INSERT INTO equipamento_diario (diario_id, codigo, descricao, quantidade_utilizada, horas_uso, observacoes) 
-              VALUES ($1, $2, $3, $4, $5, $6) 
+	query := `INSERT INTO equipamento_diario (obra_id, data, codigo, descricao, quantidade_utilizada, horas_uso, observacoes) 
+              VALUES ($1, $2, $3, $4, $5, $6, $7) 
               RETURNING id`
 
 	err := s.connection.QueryRow(query,
-		equipamento.DiarioID.Int64,
+		equipamento.ObraID.Int64,
+		equipamento.Data.String,
 		equipamento.Codigo.String,
 		equipamento.Descricao.String,
 		equipamento.QuantidadeUtilizada.Int64,
@@ -41,8 +42,8 @@ func (s *EquipamentoDiarioService) Create(equipamento models.EquipamentoDiario) 
 }
 
 func (s *EquipamentoDiarioService) GetByDiarioId(diarioId int64) ([]models.EquipamentoDiario, error) {
-	query := `SELECT id, diario_id, codigo, descricao, quantidade_utilizada, horas_uso, observacoes, created_at, updated_at 
-	          FROM equipamento_diario WHERE diario_id = $1`
+	query := `SELECT id, obra_id, data, codigo, descricao, quantidade_utilizada, horas_uso, observacoes, created_at, updated_at 
+	          FROM equipamento_diario WHERE obra_id = $1`
 
 	rows, err := s.connection.Query(query, diarioId)
 	if err != nil {
@@ -55,7 +56,8 @@ func (s *EquipamentoDiarioService) GetByDiarioId(diarioId int64) ([]models.Equip
 		var equipamento models.EquipamentoDiario
 		err = rows.Scan(
 			&equipamento.ID,
-			&equipamento.DiarioID,
+			&equipamento.ObraID,
+			&equipamento.Data,
 			&equipamento.Codigo,
 			&equipamento.Descricao,
 			&equipamento.QuantidadeUtilizada,
@@ -78,7 +80,7 @@ func (s *EquipamentoDiarioService) Update(id int, equipamento models.Equipamento
               SET codigo = $1, descricao = $2, quantidade_utilizada = $3, horas_uso = $4, 
                   observacoes = $5, updated_at = $6
               WHERE id = $7
-              RETURNING id, diario_id, codigo, descricao, quantidade_utilizada, horas_uso, observacoes, created_at, updated_at`
+              RETURNING id, obra_id, data, codigo, descricao, quantidade_utilizada, horas_uso, observacoes, created_at, updated_at`
 
 	var updated models.EquipamentoDiario
 
@@ -92,7 +94,8 @@ func (s *EquipamentoDiarioService) Update(id int, equipamento models.Equipamento
 		id,
 	).Scan(
 		&updated.ID,
-		&updated.DiarioID,
+		&updated.ObraID,
+		&updated.Data,
 		&updated.Codigo,
 		&updated.Descricao,
 		&updated.QuantidadeUtilizada,

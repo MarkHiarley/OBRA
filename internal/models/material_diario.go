@@ -8,7 +8,8 @@ import (
 
 type MaterialDiario struct {
 	ID            null.Int    `json:"id"`
-	DiarioID      null.Int    `json:"diario_id" binding:"required"`
+	ObraID        null.Int    `json:"obra_id" binding:"required"`
+	Data          null.String `json:"data" binding:"required"` // Formato: YYYY-MM-DD
 	Codigo        null.String `json:"codigo"`
 	Descricao     null.String `json:"descricao" binding:"required"`
 	Quantidade    null.Float  `json:"quantidade" binding:"required"`
