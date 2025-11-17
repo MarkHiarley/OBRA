@@ -165,15 +165,15 @@ func main() {
 
 		// EQUIPAMENTO DIARIO
 		protected.POST("/equipamento-diario", equipamentoDiarioController.Create)
-		protected.GET("/equipamento-diario/obra/:obra_id", equipamentoDiarioController.GetByObraId)                    // Todas as datas
-		protected.GET("/equipamento-diario/obra/:obra_id/data/:data", equipamentoDiarioController.GetByObraAndData)  // Data específica
+		protected.GET("/equipamento-diario/obra/:obra_id", equipamentoDiarioController.GetByObraId)                 // Todas as datas
+		protected.GET("/equipamento-diario/obra/:obra_id/data/:data", equipamentoDiarioController.GetByObraAndData) // Data específica
 		protected.PUT("/equipamento-diario/:id", equipamentoDiarioController.Update)
 		protected.DELETE("/equipamento-diario/:id", equipamentoDiarioController.Delete)
 
 		// MATERIAL DIARIO
 		protected.POST("/material-diario", materialDiarioController.Create)
-		protected.GET("/material-diario/obra/:obra_id", materialDiarioController.GetByObraId)                    // Todas as datas
-		protected.GET("/material-diario/obra/:obra_id/data/:data", materialDiarioController.GetByObraAndData)    // Data específica
+		protected.GET("/material-diario/obra/:obra_id", materialDiarioController.GetByObraId)                 // Todas as datas
+		protected.GET("/material-diario/obra/:obra_id/data/:data", materialDiarioController.GetByObraAndData) // Data específica
 		protected.PUT("/material-diario/:id", materialDiarioController.Update)
 		protected.DELETE("/material-diario/:id", materialDiarioController.Delete)
 
