@@ -24,8 +24,21 @@ func (uc *EquipamentoDiarioUseCase) Create(equipamento models.EquipamentoDiario)
 	return equipamento, nil
 }
 
-func (uc *EquipamentoDiarioUseCase) GetByDiarioId(diarioId int64) ([]models.EquipamentoDiario, error) {
-	return uc.service.GetByDiarioId(diarioId)
+func (uc *EquipamentoDiarioUseCase) GetByObraId(obraId int) ([]models.EquipamentoDiario, error) {
+	if obraId <= 0 {
+		return nil, fmt.Errorf("ID da obra inválido")
+	}
+	return uc.service.GetByObraId(int64(obraId))
+}
+
+func (uc *EquipamentoDiarioUseCase) GetByObraAndData(obraId int, data string) ([]models.EquipamentoDiario, error) {
+	if obraId <= 0 {
+		return nil, fmt.Errorf("ID da obra inválido")
+	}
+	if data == "" {
+		return nil, fmt.Errorf("data inválida")
+	}
+	return uc.service.GetByObraAndData(int64(obraId), data)
 }
 
 func (uc *EquipamentoDiarioUseCase) Update(id int, equipamento models.EquipamentoDiario) (models.EquipamentoDiario, error) {

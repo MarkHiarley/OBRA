@@ -41,11 +41,51 @@ func (s *EquipamentoDiarioService) Create(equipamento models.EquipamentoDiario) 
 	return id, nil
 }
 
-func (s *EquipamentoDiarioService) GetByDiarioId(diarioId int64) ([]models.EquipamentoDiario, error) {
+// GetByObraId retorna todos os equipamentos de uma obra (todas as datas)
+func (s *EquipamentoDiarioService) GetByObraId(obraId int64) ([]models.EquipamentoDiario, error) {
 	query := `SELECT id, obra_id, data, codigo, descricao, quantidade_utilizada, horas_uso, observacoes, created_at, updated_at 
-	          FROM equipamento_diario WHERE obra_id = $1`
+	          FROM equipamento_diario 
+	          WHERE obra_id = $1 
+	          ORDER BY data DESC, created_at DESC`
 
-	rows, err := s.connection.Query(query, diarioId)
+	rows, err := s.connection.Query(query, obraId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var equipamentos []models.EquipamentoDiario
+	for rows.Next() {
+		var equipamento models.EquipamentoDiario
+		err = rows.Scan(
+			&equipamento.ID,
+			&equipamento.ObraID,
+			&equipamento.Data,
+			&equipamento.Codigo,
+			&equipamento.Descricao,
+			&equipamento.QuantidadeUtilizada,
+			&equipamento.HorasUso,
+			&equipamento.Observacoes,
+			&equipamento.CreatedAt,
+			&equipamento.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		equipamentos = append(equipamentos, equipamento)
+	}
+
+	return equipamentos, nil
+}
+
+// GetByObraAndData retorna equipamentos de uma obra em uma data específica
+func (s *EquipamentoDiarioService) GetByObraAndData(obraId int64, data string) ([]models.EquipamentoDiario, error) {
+	query := `SELECT id, obra_id, data, codigo, descricao, quantidade_utilizada, horas_uso, observacoes, created_at, updated_at 
+	          FROM equipamento_diario 
+	          WHERE obra_id = $1 AND data = $2
+	          ORDER BY created_at DESC`
+
+	rows, err := s.connection.Query(query, obraId, data)
 	if err != nil {
 		return nil, err
 	}

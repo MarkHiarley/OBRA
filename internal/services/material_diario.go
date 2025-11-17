@@ -44,11 +44,54 @@ func (s *MaterialDiarioService) Create(material models.MaterialDiario) (int64, e
 	return id, nil
 }
 
-func (s *MaterialDiarioService) GetByDiarioId(diarioId int64) ([]models.MaterialDiario, error) {
+// GetByObraId retorna todos os materiais de uma obra (todas as datas)
+func (s *MaterialDiarioService) GetByObraId(obraId int64) ([]models.MaterialDiario, error) {
 	query := `SELECT id, obra_id, data, codigo, descricao, quantidade, unidade, fornecedor, valor_unitario, valor_total, observacoes, created_at, updated_at 
-	          FROM material_diario WHERE obra_id = $1`
+	          FROM material_diario 
+	          WHERE obra_id = $1 
+	          ORDER BY data DESC, created_at DESC`
 
-	rows, err := s.connection.Query(query, diarioId)
+	rows, err := s.connection.Query(query, obraId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var materiais []models.MaterialDiario
+	for rows.Next() {
+		var material models.MaterialDiario
+		err = rows.Scan(
+			&material.ID,
+			&material.ObraID,
+			&material.Data,
+			&material.Codigo,
+			&material.Descricao,
+			&material.Quantidade,
+			&material.Unidade,
+			&material.Fornecedor,
+			&material.ValorUnitario,
+			&material.ValorTotal,
+			&material.Observacoes,
+			&material.CreatedAt,
+			&material.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		materiais = append(materiais, material)
+	}
+
+	return materiais, nil
+}
+
+// GetByObraAndData retorna materiais de uma obra em uma data específica
+func (s *MaterialDiarioService) GetByObraAndData(obraId int64, data string) ([]models.MaterialDiario, error) {
+	query := `SELECT id, obra_id, data, codigo, descricao, quantidade, unidade, fornecedor, valor_unitario, valor_total, observacoes, created_at, updated_at 
+	          FROM material_diario 
+	          WHERE obra_id = $1 AND data = $2
+	          ORDER BY created_at DESC`
+
+	rows, err := s.connection.Query(query, obraId, data)
 	if err != nil {
 		return nil, err
 	}

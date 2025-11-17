@@ -162,15 +162,40 @@ func (c *EquipamentoDiarioController) Create(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{"message": "Equipamento criado com sucesso", "data": created})
 }
 
-func (c *EquipamentoDiarioController) GetByDiarioId(ctx *gin.Context) {
-	diarioIdStr := ctx.Param("diario_id")
-	diarioId, err := strconv.ParseInt(diarioIdStr, 10, 64)
+// GetByObraId retorna todos os equipamentos de uma obra (todas as datas)
+func (c *EquipamentoDiarioController) GetByObraId(ctx *gin.Context) {
+	obraIDParam := ctx.Param("obra_id")
+	obraID, err := strconv.Atoi(obraIDParam)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "ID da obra inválido"})
 		return
 	}
 
-	equipamentos, err := c.useCase.GetByDiarioId(diarioId)
+	equipamentos, err := c.useCase.GetByObraId(obraID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"data": equipamentos})
+}
+
+// GetByObraAndData retorna equipamentos de uma obra em uma data específica
+func (c *EquipamentoDiarioController) GetByObraAndData(ctx *gin.Context) {
+	obraIDParam := ctx.Param("obra_id")
+	obraID, err := strconv.Atoi(obraIDParam)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "ID da obra inválido"})
+		return
+	}
+
+	data := ctx.Param("data")
+	if data == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Data inválida"})
+		return
+	}
+
+	equipamentos, err := c.useCase.GetByObraAndData(obraID, data)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -249,15 +274,40 @@ func (c *MaterialDiarioController) Create(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{"message": "Material criado com sucesso", "data": created})
 }
 
-func (c *MaterialDiarioController) GetByDiarioId(ctx *gin.Context) {
-	diarioIdStr := ctx.Param("diario_id")
-	diarioId, err := strconv.ParseInt(diarioIdStr, 10, 64)
+// GetByObraId retorna todos os materiais de uma obra (todas as datas)
+func (c *MaterialDiarioController) GetByObraId(ctx *gin.Context) {
+	obraIDParam := ctx.Param("obra_id")
+	obraID, err := strconv.Atoi(obraIDParam)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "ID da obra inválido"})
 		return
 	}
 
-	materiais, err := c.useCase.GetByDiarioId(diarioId)
+	materiais, err := c.useCase.GetByObraId(obraID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"data": materiais})
+}
+
+// GetByObraAndData retorna materiais de uma obra em uma data específica
+func (c *MaterialDiarioController) GetByObraAndData(ctx *gin.Context) {
+	obraIDParam := ctx.Param("obra_id")
+	obraID, err := strconv.Atoi(obraIDParam)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "ID da obra inválido"})
+		return
+	}
+
+	data := ctx.Param("data")
+	if data == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Data inválida"})
+		return
+	}
+
+	materiais, err := c.useCase.GetByObraAndData(obraID, data)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

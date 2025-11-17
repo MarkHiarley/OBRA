@@ -24,8 +24,21 @@ func (uc *MaterialDiarioUseCase) Create(material models.MaterialDiario) (models.
 	return material, nil
 }
 
-func (uc *MaterialDiarioUseCase) GetByDiarioId(diarioId int64) ([]models.MaterialDiario, error) {
-	return uc.service.GetByDiarioId(diarioId)
+func (uc *MaterialDiarioUseCase) GetByObraId(obraId int) ([]models.MaterialDiario, error) {
+	if obraId <= 0 {
+		return nil, fmt.Errorf("ID da obra inválido")
+	}
+	return uc.service.GetByObraId(int64(obraId))
+}
+
+func (uc *MaterialDiarioUseCase) GetByObraAndData(obraId int, data string) ([]models.MaterialDiario, error) {
+	if obraId <= 0 {
+		return nil, fmt.Errorf("ID da obra inválido")
+	}
+	if data == "" {
+		return nil, fmt.Errorf("data inválida")
+	}
+	return uc.service.GetByObraAndData(int64(obraId), data)
 }
 
 func (uc *MaterialDiarioUseCase) Update(id int, material models.MaterialDiario) (models.MaterialDiario, error) {
