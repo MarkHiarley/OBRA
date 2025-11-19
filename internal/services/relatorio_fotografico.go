@@ -32,13 +32,14 @@ func (rs *RelatorioFotograficoService) GetRelatorioFotografico(obraID int64) (mo
 			) as localizacao,
 			o.contrato_numero,
 			o.lote,
-			o.descricao
+			o.descricao,
+			o.foto
 		FROM obra o
 		WHERE o.id = $1
 	`
 
 	var nomeObra, localizacao string
-	var contratoNumero, lote, descricao null.String
+	var contratoNumero, lote, descricao, fotoObra null.String
 
 	err := rs.connection.QueryRow(queryObra, obraID).Scan(
 		&nomeObra,
@@ -46,6 +47,7 @@ func (rs *RelatorioFotograficoService) GetRelatorioFotografico(obraID int64) (mo
 		&contratoNumero,
 		&lote,
 		&descricao,
+		&fotoObra,
 	)
 
 	if err != nil {
@@ -119,6 +121,7 @@ func (rs *RelatorioFotograficoService) GetRelatorioFotografico(obraID int64) (mo
 			ContratoNumero:    contratoNumero,
 			Lote:              lote,
 			DescricaoBreve:    descricao,
+			FotoObra:          fotoObra,
 			InformacoesGerais: null.StringFrom("Relatório fotográfico da execução da obra"),
 		},
 		Fotos: fotos,

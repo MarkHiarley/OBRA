@@ -23,6 +23,7 @@ type ResumoObra struct {
 	ContratoNumero    null.String `json:"contrato_numero"`
 	Lote              null.String `json:"lote"`
 	DescricaoBreve    null.String `json:"descricao_breve"`    // O que é a obra
+	FotoObra          null.String `json:"foto_obra"`          // Foto principal da obra
 	InformacoesGerais null.String `json:"informacoes_gerais"` // Informações gerais sem valores
 }
 
