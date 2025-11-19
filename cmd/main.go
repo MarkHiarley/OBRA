@@ -59,6 +59,16 @@ func main() {
 	relatorioUseCase := usecases.NewRelatorioUseCase(relatorioService, obraService)
 	relatorioController := controller.NewRelatorioController(relatorioUseCase)
 
+	// Relatório Fotográfico
+	relatorioFotograficoService := services.NewRelatorioFotograficoService(dbconnection)
+	relatorioFotograficoUseCase := usecases.NewRelatorioFotograficoUseCase(relatorioFotograficoService)
+	relatorioFotograficoController := controller.NewRelatorioFotograficoController(relatorioFotograficoUseCase)
+
+	// Diário Semanal
+	diarioSemanalService := services.NewDiarioSemanalService(dbconnection)
+	diarioSemanalUseCase := usecases.NewDiarioSemanalUseCase(diarioSemanalService)
+	diarioSemanalController := controller.NewDiarioSemanalController(diarioSemanalUseCase)
+
 	loginService := services.NewLoginService(dbconnection)
 	loginUseCase := usecases.NewLoginUsecase(loginService)
 	loginController := controller.NewLoginController(loginUseCase)
@@ -154,6 +164,12 @@ func main() {
 		protected.GET("/relatorios/pagamentos/:obra_id", relatorioController.GetRelatorioPagamentos) // ?status=PENDENTE opcional
 		protected.GET("/relatorios/materiais/:obra_id", relatorioController.GetRelatorioMateriais)
 		protected.GET("/relatorios/profissionais/:obra_id", relatorioController.GetRelatorioProfissionais)
+
+		// RELATÓRIO FOTOGRÁFICO (Novo - apenas fotos da obra)
+		protected.GET("/relatorios/fotografico/:obra_id", relatorioFotograficoController.GetRelatorioFotografico)
+
+		// DIÁRIO SEMANAL (Novo - diário por período com descrição)
+		protected.POST("/diarios/semanal", diarioSemanalController.GetDiarioSemanal)
 
 		// EQUIPE DIARIO
 		protected.POST("/equipe-diario", equipeDiarioController.Create)
