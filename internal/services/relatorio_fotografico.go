@@ -57,19 +57,24 @@ func (rs *RelatorioFotograficoService) GetRelatorioFotografico(obraID int64) (mo
 		return models.RelatorioFotografico{}, fmt.Errorf("erro ao buscar dados da obra: %v", err)
 	}
 
-	// 2. Buscar todas as fotos da obra (de diários)
+	// 2. Buscar todas as fotos da obra (da tabela foto_diario)
+	// Busca fotos associadas a diários da obra através de JOIN
 	queryFotos := `
 		SELECT 
-			d.id,
-			d.foto,
+			fd.id,
+			fd.foto,
+			fd.descricao,
+			fd.categoria,
+			fd.ordem,
 			d.data,
-			d.periodo,
-			d.observacoes
-		FROM diario_obra d
+			d.periodo
+		FROM foto_diario fd
+		INNER JOIN diario_obra d ON fd.entidade_id = d.id
 		WHERE d.obra_id = $1 
-		  AND d.foto IS NOT NULL 
-		  AND d.foto != ''
-		ORDER BY d.data DESC, d.created_at DESC
+		  AND fd.entidade_tipo = 'atividade'
+		  AND fd.foto IS NOT NULL 
+		  AND fd.foto != ''
+		ORDER BY d.data DESC, fd.ordem ASC, fd.id DESC
 	`
 
 	rows, err := rs.connection.Query(queryFotos, obraID)
@@ -82,16 +87,20 @@ func (rs *RelatorioFotograficoService) GetRelatorioFotografico(obraID int64) (mo
 	for rows.Next() {
 		var id int64
 		var foto string
-		var data, periodo, observacao null.String
+		var descricao, categoria null.String
+		var ordem null.Int
+		var data, periodo null.String
 
-		err := rows.Scan(&id, &foto, &data, &periodo, &observacao)
+		err := rows.Scan(&id, &foto, &descricao, &categoria, &ordem, &data, &periodo)
 		if err != nil {
 			continue // Ignora erros de scan individual
 		}
 
-		// Criar título/legenda baseado no período
+		// Usar a descrição da foto, ou criar título baseado no período
 		var tituloLegenda null.String
-		if periodo.Valid {
+		if descricao.Valid && descricao.String != "" {
+			tituloLegenda = descricao
+		} else if periodo.Valid {
 			tituloLegenda = null.StringFrom(fmt.Sprintf("Foto do período: %s", periodo.String))
 		} else {
 			tituloLegenda = null.StringFrom("Foto da obra")
@@ -102,8 +111,8 @@ func (rs *RelatorioFotograficoService) GetRelatorioFotografico(obraID int64) (mo
 			URL:           foto,
 			TituloLegenda: tituloLegenda,
 			Data:          data,
-			Observacao:    observacao,
-			Categoria:     null.StringFrom("DIARIO"),
+			Observacao:    null.String{}, // foto_diario não tem observação separada
+			Categoria:     categoria,
 		}
 
 		fotos = append(fotos, fotoDetalhada)
