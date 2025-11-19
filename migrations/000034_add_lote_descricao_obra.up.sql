@@ -1,7 +1,4 @@
--- Migration 000034: Adiciona campos lote e descricao na tabela obra
--- Para uso nos relatórios fotográfico e diário semanal
 
--- Adicionar coluna lote (identificação do lote da obra)
 ALTER TABLE obra ADD COLUMN IF NOT EXISTS lote VARCHAR(100);
 
 -- Adicionar coluna descricao (descrição breve da obra)
